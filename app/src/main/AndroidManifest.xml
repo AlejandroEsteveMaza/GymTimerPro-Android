@@ -3,6 +3,7 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="com.android.vending.BILLING" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <application
         android:name=".GymTimerProApplication"
@@ -20,6 +21,10 @@
         <meta-data
             android:name="PAYWALL_PRIVACY_URL"
             android:value="https://alejandroestevemaza.github.io/GymTimerPro-privacy/" />
+        <receiver
+            android:name=".feature.training.notifications.RestTimerAlarmReceiver"
+            android:enabled="true"
+            android:exported="false" />
         <activity
             android:name=".MainActivity"
             android:exported="true"

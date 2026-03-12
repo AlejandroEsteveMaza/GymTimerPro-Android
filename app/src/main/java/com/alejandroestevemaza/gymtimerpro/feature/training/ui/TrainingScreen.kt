@@ -1,5 +1,11 @@
 package com.alejandroestevemaza.gymtimerpro.feature.training.ui
 
+import android.Manifest
+import android.content.Context
+import android.content.pm.PackageManager
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -32,13 +38,16 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.alejandroestevemaza.gymtimerpro.R
@@ -59,9 +68,21 @@ fun TrainingRoute(
     appContainer: AppContainer,
     onRequestPaywall: (PaywallPresentationRequest) -> Unit,
 ) {
+    val context = LocalContext.current
     var showRoutinePicker by remember { mutableStateOf(false) }
     var pickerSearchQuery by remember { mutableStateOf("") }
     var pickerExpandedSectionId by remember { mutableStateOf<String?>(null) }
+    var hasRequestedNotificationPermission by rememberSaveable {
+        mutableStateOf(
+            context.getSharedPreferences(PERMISSION_PREFS_NAME, Context.MODE_PRIVATE)
+                .getBoolean(KEY_POST_NOTIFICATIONS_REQUESTED, false)
+        )
+    }
+    val permissionRequestLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission(),
+    ) { _ ->
+        hasRequestedNotificationPermission = true
+    }
     val trainingViewModel: TrainingViewModel = viewModel(
         factory = TrainingViewModel.factory(
             appSettingsRepository = appContainer.appSettingsRepository,
@@ -70,6 +91,7 @@ fun TrainingRoute(
             routinesRepository = appContainer.routinesRepository,
             trainingSessionCoordinator = appContainer.trainingSessionCoordinator,
             workoutCompletionRepository = appContainer.workoutCompletionRepository,
+            restNotificationCoordinator = appContainer.restNotificationCoordinator,
             quickWorkoutLabel = stringResource(R.string.training_quick_workout),
         )
     )
@@ -80,6 +102,23 @@ fun TrainingRoute(
     val classifications by appContainer.routinesRepository.classifications.collectAsStateWithLifecycle(
         initialValue = emptyList()
     )
+
+    val requestNotificationPermissionIfNeeded: () -> Unit = {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            val hasPermission = ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.POST_NOTIFICATIONS,
+            ) == PackageManager.PERMISSION_GRANTED
+            if (!hasPermission && !hasRequestedNotificationPermission) {
+                context.getSharedPreferences(PERMISSION_PREFS_NAME, Context.MODE_PRIVATE)
+                    .edit()
+                    .putBoolean(KEY_POST_NOTIFICATIONS_REQUESTED, true)
+                    .apply()
+                hasRequestedNotificationPermission = true
+                permissionRequestLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+            }
+        }
+    }
 
     TrainingScreen(
         uiState = uiState,
@@ -92,7 +131,10 @@ fun TrainingRoute(
         onDecreaseTotalSets = trainingViewModel::onDecreaseTotalSets,
         onIncreaseRestSeconds = trainingViewModel::onIncreaseRestSeconds,
         onDecreaseRestSeconds = trainingViewModel::onDecreaseRestSeconds,
-        onStartRest = trainingViewModel::onStartRest,
+        onStartRest = {
+            trainingViewModel.onStartRest()
+            requestNotificationPermissionIfNeeded()
+        },
         onResetWorkout = trainingViewModel::onResetWorkout,
         onDismissDailyLimitDialog = trainingViewModel::onDismissDailyLimitDialog,
         onRequestPaywall = onRequestPaywall,
@@ -120,6 +162,9 @@ fun TrainingRoute(
         },
     )
 }
+
+private const val PERMISSION_PREFS_NAME = "gymtimerpro.permissions"
+private const val KEY_POST_NOTIFICATIONS_REQUESTED = "post_notifications.requested"
 
 @Composable
 fun TrainingScreen(

@@ -1,0 +1,9 @@
+<resources>
+    <string name="notification_rest_finished_title">휴식 종료</string>
+    <string name="notification_rest_finished_body_format">세트 %1$d/%2$d</string>
+    <string name="live_activity_mode_resting">휴식</string>
+    <string name="live_activity_mode_training">운동</string>
+    <string name="live_activity_set_progress_expanded_format">세트 %1$d / %2$d</string>
+    <string name="live_activity_set_progress_compact_format">%1$d/%2$d</string>
+    <string name="app_name_fallback">GymTimerPro</string>
+</resources>

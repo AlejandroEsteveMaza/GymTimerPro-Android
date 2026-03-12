@@ -1,0 +1,9 @@
+<resources>
+    <string name="notification_rest_finished_title">आराम समाप्त</string>
+    <string name="notification_rest_finished_body_format">सेट %1$d/%2$d</string>
+    <string name="live_activity_mode_resting">आराम</string>
+    <string name="live_activity_mode_training">ट्रेनिंग</string>
+    <string name="live_activity_set_progress_expanded_format">सेट %1$d में से %2$d</string>
+    <string name="live_activity_set_progress_compact_format">%1$d/%2$d</string>
+    <string name="app_name_fallback">GymTimerPro</string>
+</resources>

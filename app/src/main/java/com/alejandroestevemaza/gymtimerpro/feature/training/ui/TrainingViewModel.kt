@@ -15,6 +15,7 @@ import com.alejandroestevemaza.gymtimerpro.data.preferences.TrainingSessionRepos
 import com.alejandroestevemaza.gymtimerpro.data.repository.RoutinesRepository
 import com.alejandroestevemaza.gymtimerpro.data.repository.TrainingSessionCoordinator
 import com.alejandroestevemaza.gymtimerpro.data.repository.WorkoutCompletionRepository
+import com.alejandroestevemaza.gymtimerpro.feature.training.notifications.RestNotificationCoordinator
 import java.time.Clock
 import java.time.Instant
 import java.time.ZoneId
@@ -36,6 +37,7 @@ class TrainingViewModel(
     private val routinesRepository: RoutinesRepository,
     private val trainingSessionCoordinator: TrainingSessionCoordinator,
     private val workoutCompletionRepository: WorkoutCompletionRepository,
+    private val restNotificationCoordinator: RestNotificationCoordinator,
     private val clock: Clock,
     private val quickWorkoutLabel: String,
 ) : ViewModel() {
@@ -166,6 +168,7 @@ class TrainingViewModel(
     }
 
     fun onResetWorkout() {
+        restNotificationCoordinator.clearAll()
         persistSession { session ->
             session.copy(
                 currentSet = TrainingDefaults.currentSet,
@@ -206,6 +209,7 @@ class TrainingViewModel(
     }
 
     private suspend fun completeWorkout(session: TrainingSessionState) {
+        restNotificationCoordinator.clearAll()
         val completedAtEpochMillis = clock.millis()
         workoutCompletionRepository.insertCompletion(
             WorkoutCompletion(
@@ -264,6 +268,7 @@ class TrainingViewModel(
     private fun synchronizeTimer(session: TrainingSessionState) {
         val endEpochMillis = session.timerEndEpochMillis
         if (!session.timerIsRunning || endEpochMillis == null) {
+            restNotificationCoordinator.syncRestState(session)
             timerJob?.cancel()
             timerJob = null
             activeTimerEndEpochMillis = null
@@ -274,6 +279,7 @@ class TrainingViewModel(
             return
         }
 
+        restNotificationCoordinator.syncRestState(session)
         timerJob?.cancel()
         activeTimerEndEpochMillis = endEpochMillis
         timerJob = viewModelScope.launch {
@@ -281,6 +287,10 @@ class TrainingViewModel(
             while (true) {
                 val remainingSeconds = computeRemainingSeconds(endEpochMillis)
                 if (remainingSeconds <= 0) {
+                    restNotificationCoordinator.notifyRestFinished(
+                        currentSet = session.currentSet,
+                        totalSets = session.totalSets,
+                    )
                     trainingSessionRepository.updateSession { current ->
                         current.copy(
                             timerIsRunning = false,
@@ -381,6 +391,7 @@ class TrainingViewModel(
             routinesRepository: RoutinesRepository,
             trainingSessionCoordinator: TrainingSessionCoordinator,
             workoutCompletionRepository: WorkoutCompletionRepository,
+            restNotificationCoordinator: RestNotificationCoordinator,
             quickWorkoutLabel: String,
             clock: Clock = Clock.systemDefaultZone(),
         ): ViewModelProvider.Factory = object : ViewModelProvider.Factory {
@@ -393,6 +404,7 @@ class TrainingViewModel(
                     routinesRepository = routinesRepository,
                     trainingSessionCoordinator = trainingSessionCoordinator,
                     workoutCompletionRepository = workoutCompletionRepository,
+                    restNotificationCoordinator = restNotificationCoordinator,
                     clock = clock,
                     quickWorkoutLabel = quickWorkoutLabel,
                 ) as T

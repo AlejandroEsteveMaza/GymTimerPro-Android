@@ -9,6 +9,8 @@ import com.alejandroestevemaza.gymtimerpro.data.repository.DefaultWorkoutComplet
 import com.alejandroestevemaza.gymtimerpro.data.repository.RoutinesRepository
 import com.alejandroestevemaza.gymtimerpro.data.repository.TrainingSessionCoordinator
 import com.alejandroestevemaza.gymtimerpro.data.repository.WorkoutCompletionRepository
+import com.alejandroestevemaza.gymtimerpro.feature.training.notifications.AndroidRestNotificationCoordinator
+import com.alejandroestevemaza.gymtimerpro.feature.training.notifications.RestNotificationCoordinator
 
 class AppContainer(context: Context) {
     private val appContext = context.applicationContext
@@ -31,6 +33,10 @@ class AppContainer(context: Context) {
 
     val trainingSessionRepository: TrainingSessionRepository by lazy {
         DataStoreTrainingSessionRepository(appContext)
+    }
+
+    val restNotificationCoordinator: RestNotificationCoordinator by lazy {
+        AndroidRestNotificationCoordinator(appContext)
     }
 
     val routinesRepository: RoutinesRepository by lazy {
