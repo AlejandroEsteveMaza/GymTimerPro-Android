@@ -56,6 +56,7 @@ Currently extracted:
 - progress module
 - settings module
 - paywall and subscriptions module
+- paywall copy and localization source map
 - notifications and widget parity
 - localization
 

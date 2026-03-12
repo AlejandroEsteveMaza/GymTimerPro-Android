@@ -21,6 +21,9 @@ Primary iOS sources:
 - `GymTimerPro/MainTabView.swift`
 - `GymTimerPro/ContentView.swift`
 - `GymTimerPro/Info.plist`
+- `Shared/L10n.swift`
+- `Shared/<locale>.lproj/Localizable.strings`
+- `android-port/specs/paywall-copy-localization.md`
 
 ## Product Role
 
@@ -236,6 +239,16 @@ Android requirement:
 - use localized resources
 - keep the same payload structure so the same contextual paywall composition remains possible
 
+Exact copy parity source:
+
+- do not derive paywall copy from this spec alone
+- the exact localized strings already exist in the workspace
+- use `android-port/specs/paywall-copy-localization.md` as the copy-source index
+- use `GymTimerPro/PaywallContent.swift` as the runtime contract for key selection
+
+This closes the previous documentation gap: the port is not blocked by missing
+paywall source copy.
+
 ## Paywall Layout Semantics
 
 The paywall screen includes, in order:
@@ -327,10 +340,17 @@ Current fallback values:
 - terms: Apple standard EULA URL
 - privacy: Apple privacy URL fallback, though the app currently overrides this with project-specific privacy URL in `Info.plist`
 
+Current configured production values in the app:
+
+- `PAYWALL_TERMS_URL = https://www.apple.com/legal/internet-services/itunes/dev/stdeula/`
+- `PAYWALL_PRIVACY_URL = https://alejandroestevemaza.github.io/GymTimerPro-privacy/`
+
 Android requirement:
 
 - keep legal URLs externally configurable
 - do not hardcode them only inside UI code
+- keep both URLs available even if the paywall screen renders before billing data loads
+- keep the manage subscription action separate from terms and privacy
 
 ## Info.plist / Config Contract
 
@@ -353,9 +373,20 @@ Current alert cases:
 - pending
 - unknown
 
+Exact localized message surface used today:
+
+- error title: `paywall.error.title`
+- unavailable: `paywall.error.product_unavailable`
+- verification failure: `paywall.error.failed_verification`
+- pending: `paywall.error.pending`
+- generic: `paywall.error.unknown`
+- restore-without-entitlement info: `paywall.restore.no_purchases`
+- info alert title: `paywall.info.title`
+
 User-cancelled purchase:
 
 - does not show an error alert
+- localized key exists (`paywall.error.user_cancelled`) but current UI intentionally suppresses it
 
 Separate informational alert:
 
@@ -365,6 +396,8 @@ Android parity:
 
 - keep user-cancelled silent
 - keep restore-without-entitlement as informational, not failure
+- keep restore failures and unknown purchase failures on the error channel
+- keep info and error messaging separated in the UI state model
 
 ## Processing State
 
@@ -398,6 +431,22 @@ Android should:
 - preserve entry-point and info-level specific variants
 - preserve legal and trust lines
 - preserve restore/manage/privacy/terms button strings
+- preserve trial incentive formatting and generic period fallback strings
+- preserve the current initial scope of 15 locales documented in `paywall-copy-localization.md`
+
+## Billing Dependency Status in Current Workspace
+
+Current repository state:
+
+- there is no Android project checked into this workspace yet
+- there is no Gradle build, version catalog, or existing Android billing dependency to reuse
+- there is no Android-side billing abstraction already started outside `android-port/`
+
+Implication for the Android port:
+
+- Billing infrastructure must be added from scratch in the Android project
+- this spec defines behavior only; it does not assume a pre-existing dependency catalog
+- when the Android project is created, add Google Play Billing there rather than trying to infer a reusable dependency setup from this iOS workspace
 
 ## Android Implementation Notes
 
@@ -405,6 +454,8 @@ Android should:
 - Expose a stable `isPro` flow or state holder shared by the app shell and paywall UI.
 - Keep the paywall UI data-driven from a copy model similar to the current `PaywallCopy`.
 - Do not bury entitlement checks directly inside composables.
+- Read legal URLs from centralized config.
+- Keep exact paywall namespaces traceable back to `paywall-copy-localization.md`.
 
 ## Acceptance Checklist
 
