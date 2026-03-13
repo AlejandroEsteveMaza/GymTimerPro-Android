@@ -20,7 +20,9 @@ The Android project should not be generated from a single general prompt. The po
    Defines the global contract of the app.
 2. `specs/<module>.md`
    Defines exact behavior per module.
-3. `prompts/<module>-prompt.md`
+3. `design/<layer>.md`
+   Defines visual parity contract (tokens, layout, components, screenshot acceptance).
+4. `prompts/<module>-prompt.md`
    Uses the specs to produce implementation tasks or coding prompts.
 
 ## Working Method
@@ -59,6 +61,7 @@ Currently extracted:
 - paywall copy and localization source map
 - notifications and widget parity
 - localization
+- design contract (system, tokens, screens, components, assets reference)
 
 Pending extraction:
 

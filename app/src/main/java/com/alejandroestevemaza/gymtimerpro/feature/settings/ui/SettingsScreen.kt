@@ -1,25 +1,38 @@
 package com.alejandroestevemaza.gymtimerpro.feature.settings.ui
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.rounded.ChevronRight
+import androidx.compose.material.icons.rounded.ExpandMore
 import androidx.compose.material3.Card
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.text.style.TextAlign
 import com.alejandroestevemaza.gymtimerpro.R
+import com.alejandroestevemaza.gymtimerpro.core.designsystem.theme.GymTheme
 import com.alejandroestevemaza.gymtimerpro.core.designsystem.theme.displayLabel
 import com.alejandroestevemaza.gymtimerpro.core.model.AppSettings
 import com.alejandroestevemaza.gymtimerpro.core.model.EnergySavingMode
@@ -27,6 +40,12 @@ import com.alejandroestevemaza.gymtimerpro.core.model.MaxSetsPreference
 import com.alejandroestevemaza.gymtimerpro.core.model.RestIncrementPreference
 import com.alejandroestevemaza.gymtimerpro.core.model.TimerDisplayFormat
 import com.alejandroestevemaza.gymtimerpro.core.model.WeightUnitPreference
+
+enum class SettingsPreviewMenu {
+    WeightUnit,
+    MaxSets,
+    EnergySaving,
+}
 
 @Composable
 fun SettingsScreen(
@@ -36,120 +55,210 @@ fun SettingsScreen(
     onMaxSetsPreferenceSelected: (MaxSetsPreference) -> Unit,
     onRestIncrementPreferenceSelected: (RestIncrementPreference) -> Unit,
     onEnergySavingModeSelected: (EnergySavingMode) -> Unit,
+    onManageClassifications: () -> Unit = {},
+    previewExpandedMenu: SettingsPreviewMenu? = null,
 ) {
-    LazyColumn(
+    Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(20.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
+            .statusBarsPadding()
+            .navigationBarsPadding()
+            .padding(horizontal = GymTheme.spacing.s16, vertical = GymTheme.spacing.s12),
+        verticalArrangement = Arrangement.spacedBy(GymTheme.spacing.s20),
     ) {
-        item {
-            SettingsCard(
-                title = stringResource(R.string.app_shell_settings_title),
-                body = stringResource(R.string.app_shell_settings_body),
-            )
-        }
-        item {
-            SettingsOptionsCard(
-                title = stringResource(R.string.settings_section_weight_unit),
-                selectedOption = settings.weightUnitPreference,
-                options = WeightUnitPreference.entries.toList(),
-                optionLabel = { option -> option.displayLabel() },
-                onOptionSelected = onWeightUnitPreferenceSelected,
-            )
-        }
-        item {
-            SettingsOptionsCard(
-                title = stringResource(R.string.settings_section_timer_display),
-                selectedOption = settings.timerDisplayFormat,
-                options = TimerDisplayFormat.entries.toList(),
-                optionLabel = { option -> option.displayLabel() },
-                onOptionSelected = onTimerDisplayFormatSelected,
-            )
-        }
-        item {
-            SettingsOptionsCard(
-                title = stringResource(R.string.settings_section_max_sets),
-                selectedOption = settings.maxSetsPreference,
-                options = MaxSetsPreference.entries.toList(),
-                optionLabel = { option -> option.maxSets.toString() },
-                onOptionSelected = onMaxSetsPreferenceSelected,
-            )
-        }
-        item {
-            SettingsOptionsCard(
-                title = stringResource(R.string.settings_section_rest_increment),
-                selectedOption = settings.restIncrementPreference,
-                options = RestIncrementPreference.entries.toList(),
-                optionLabel = { option -> "${option.seconds} sec" },
-                onOptionSelected = onRestIncrementPreferenceSelected,
-            )
-        }
-        item {
-            SettingsOptionsCard(
-                title = stringResource(R.string.settings_section_energy_saving),
-                selectedOption = settings.energySavingMode,
-                options = EnergySavingMode.entries.toList(),
-                optionLabel = { option -> option.displayLabel() },
-                onOptionSelected = onEnergySavingModeSelected,
-            )
-        }
+        Text(
+            text = stringResource(R.string.app_navigation_settings),
+            style = GymTheme.type.title2Bold,
+            color = GymTheme.colors.textPrimary,
+        )
+
+        SettingsMenuSection(
+            title = stringResource(R.string.settings_section_weight_unit),
+            rowLabel = stringResource(R.string.settings_section_weight_unit),
+            selectedOption = settings.weightUnitPreference,
+            selectedLabel = settings.weightUnitPreference.displayLabel(),
+            options = WeightUnitPreference.entries.toList(),
+            optionLabel = { option -> option.displayLabel() },
+            onOptionSelected = onWeightUnitPreferenceSelected,
+            forceExpanded = previewExpandedMenu == SettingsPreviewMenu.WeightUnit,
+        )
+
+        SettingsSegmentedSection(
+            title = stringResource(R.string.settings_section_timer_display),
+            selected = settings.timerDisplayFormat,
+            options = TimerDisplayFormat.entries.toList(),
+            optionLabel = { option -> option.displayLabel() },
+            onOptionSelected = onTimerDisplayFormatSelected,
+        )
+
+        SettingsMenuSection(
+            title = stringResource(R.string.settings_section_max_sets),
+            rowLabel = stringResource(R.string.settings_section_max_sets),
+            selectedOption = settings.maxSetsPreference,
+            selectedLabel = "${settings.maxSetsPreference.maxSets} ${stringResource(R.string.routines_sets_label).lowercase()}",
+            options = MaxSetsPreference.entries.toList(),
+            optionLabel = { option ->
+                "${option.maxSets} ${stringResource(R.string.routines_sets_label).lowercase()}"
+            },
+            onOptionSelected = onMaxSetsPreferenceSelected,
+            forceExpanded = previewExpandedMenu == SettingsPreviewMenu.MaxSets,
+        )
+
+        SettingsSegmentedSection(
+            title = stringResource(R.string.settings_section_rest_increment),
+            selected = settings.restIncrementPreference,
+            options = RestIncrementPreference.entries.toList(),
+            optionLabel = { option -> "${option.seconds} sec" },
+            onOptionSelected = onRestIncrementPreferenceSelected,
+        )
+
+        SettingsMenuSection(
+            title = stringResource(R.string.settings_section_energy_saving),
+            rowLabel = stringResource(R.string.settings_mode_label),
+            selectedOption = settings.energySavingMode,
+            selectedLabel = settings.energySavingMode.displayLabel(),
+            options = EnergySavingMode.entries.toList(),
+            optionLabel = { option -> option.displayLabel() },
+            onOptionSelected = onEnergySavingModeSelected,
+            forceExpanded = previewExpandedMenu == SettingsPreviewMenu.EnergySaving,
+        )
+        Text(
+            text = stringResource(R.string.settings_energy_description),
+            style = GymTheme.type.footnoteRegular,
+            color = GymTheme.colors.textSecondary,
+        )
+
+        SettingsNavigationRow(
+            label = stringResource(R.string.routines_manage_classifications),
+            onClick = onManageClassifications,
+        )
     }
 }
 
 @Composable
-private fun SettingsCard(
+private fun <T> SettingsMenuSection(
     title: String,
-    body: String,
-) {
-    Card(modifier = Modifier.fillMaxWidth()) {
-        Column(
-            modifier = Modifier.padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold,
-            )
-            Text(
-                text = body,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-    }
-}
-
-@Composable
-private fun <T> SettingsOptionsCard(
-    title: String,
+    rowLabel: String,
     selectedOption: T,
+    selectedLabel: String,
     options: List<T>,
     optionLabel: @Composable (T) -> String,
     onOptionSelected: (T) -> Unit,
+    forceExpanded: Boolean = false,
 ) {
-    Card(modifier = Modifier.fillMaxWidth()) {
-        Column(
-            modifier = Modifier.padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+    var expanded by remember { mutableStateOf(false) }
+
+    Column(verticalArrangement = Arrangement.spacedBy(GymTheme.spacing.s8)) {
+        SettingsSectionLabel(title = title)
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(min = GymTheme.layout.minTapHeight)
+                .clickable {
+                    if (!forceExpanded) {
+                        expanded = true
+                    }
+                },
+            shape = RoundedCornerShape(GymTheme.radii.r12),
         ) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold,
-            )
-            Text(
-                text = optionLabel(selectedOption),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = GymTheme.spacing.s16, vertical = GymTheme.spacing.s12),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = rowLabel,
+                    style = GymTheme.type.subheadlineRegular,
+                    color = GymTheme.colors.textPrimary,
+                )
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(GymTheme.spacing.s8),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        text = selectedLabel,
+                        style = GymTheme.type.subheadlineRegular,
+                        color = GymTheme.colors.iconTint,
+                        textAlign = TextAlign.End,
+                    )
+                    Icon(
+                        imageVector = Icons.Rounded.ExpandMore,
+                        contentDescription = null,
+                        tint = GymTheme.colors.iconTint,
+                    )
+                }
+            }
+        }
+
+        if (forceExpanded) {
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth(0.58f)
+                    .align(Alignment.End)
+                    .padding(top = GymTheme.spacing.s4),
+                shape = RoundedCornerShape(GymTheme.radii.r20),
+            ) {
+                Column {
+                    options.forEach { option ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .heightIn(min = GymTheme.layout.minTapHeight)
+                                .clickable { onOptionSelected(option) }
+                                .padding(horizontal = GymTheme.spacing.s16),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            val isSelected = option == selectedOption
+                            if (isSelected) {
+                                Icon(
+                                    imageVector = Icons.Rounded.Check,
+                                    contentDescription = null,
+                                    tint = GymTheme.colors.textPrimary,
+                                    modifier = Modifier.padding(end = GymTheme.spacing.s12),
+                                )
+                            }
+                            Text(
+                                text = optionLabel(option),
+                                style = GymTheme.type.subheadlineRegular,
+                                color = GymTheme.colors.textPrimary,
+                            )
+                        }
+                    }
+                }
+            }
+        } else {
+            DropdownMenu(
+                expanded = expanded,
+                onDismissRequest = { expanded = false },
+                modifier = Modifier.background(
+                    color = GymTheme.colors.cardBackground,
+                    shape = RoundedCornerShape(GymTheme.radii.r12),
+                ),
+            ) {
                 options.forEach { option ->
-                    SettingsOptionRow(
-                        label = optionLabel(option),
-                        selected = option == selectedOption,
-                        onClick = { onOptionSelected(option) },
+                    DropdownMenuItem(
+                        text = {
+                            Text(
+                                text = optionLabel(option),
+                                style = GymTheme.type.subheadlineRegular,
+                                color = GymTheme.colors.textPrimary,
+                            )
+                        },
+                        leadingIcon = {
+                            if (option == selectedOption) {
+                                Icon(
+                                    imageVector = Icons.Rounded.Check,
+                                    contentDescription = null,
+                                    tint = GymTheme.colors.textPrimary,
+                                )
+                            }
+                        },
+                        onClick = {
+                            expanded = false
+                            onOptionSelected(option)
+                        },
                     )
                 }
             }
@@ -158,31 +267,93 @@ private fun <T> SettingsOptionsCard(
 }
 
 @Composable
-private fun SettingsOptionRow(
+private fun <T> SettingsSegmentedSection(
+    title: String,
+    selected: T,
+    options: List<T>,
+    optionLabel: @Composable (T) -> String,
+    onOptionSelected: (T) -> Unit,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(GymTheme.spacing.s8)) {
+        SettingsSectionLabel(title = title)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(
+                    color = GymTheme.colors.secondaryButtonFill,
+                    shape = RoundedCornerShape(GymTheme.radii.capsule),
+                )
+                .padding(GymTheme.spacing.s4),
+            horizontalArrangement = Arrangement.spacedBy(GymTheme.spacing.s4),
+        ) {
+            options.forEach { option ->
+                val isSelected = option == selected
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .heightIn(min = GymTheme.layout.minTapHeight)
+                        .background(
+                            color = if (isSelected) {
+                                GymTheme.colors.cardBackground
+                            } else {
+                                androidx.compose.ui.graphics.Color.Transparent
+                            },
+                            shape = RoundedCornerShape(GymTheme.radii.capsule),
+                        )
+                        .clickable { onOptionSelected(option) },
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        text = optionLabel(option),
+                        style = if (isSelected) GymTheme.type.subheadlineSemibold else GymTheme.type.subheadlineRegular,
+                        color = GymTheme.colors.textPrimary,
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SettingsSectionLabel(
+    title: String,
+) {
+    Text(
+        text = title,
+        style = GymTheme.type.captionRegular,
+        color = GymTheme.colors.textSecondary,
+    )
+}
+
+@Composable
+private fun SettingsNavigationRow(
     label: String,
-    selected: Boolean,
     onClick: () -> Unit,
 ) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
+            .heightIn(min = GymTheme.layout.minTapHeight)
             .clickable(onClick = onClick),
+        shape = RoundedCornerShape(GymTheme.radii.r12),
     ) {
-        androidx.compose.foundation.layout.Row(
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 14.dp),
+                .padding(horizontal = GymTheme.spacing.s16, vertical = GymTheme.spacing.s12),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text(text = label, style = MaterialTheme.typography.bodyMedium)
-            if (selected) {
-                Icon(
-                    imageVector = Icons.Rounded.Check,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                )
-            }
+            Text(
+                text = label,
+                style = GymTheme.type.subheadlineRegular,
+                color = GymTheme.colors.textPrimary,
+            )
+            Icon(
+                imageVector = Icons.Rounded.ChevronRight,
+                contentDescription = null,
+                tint = GymTheme.colors.textSecondary,
+            )
         }
     }
 }

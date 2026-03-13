@@ -3,6 +3,7 @@ package com.alejandroestevemaza.gymtimerpro.feature.progress.ui
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -15,9 +16,13 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -26,6 +31,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.BarChart
 import androidx.compose.material.icons.rounded.CalendarMonth
 import androidx.compose.material.icons.rounded.FitnessCenter
+import androidx.compose.material.icons.rounded.ExpandMore
 import androidx.compose.material.icons.rounded.History
 import androidx.compose.material.icons.rounded.LocalFireDepartment
 import androidx.compose.material.icons.rounded.LocalOffer
@@ -34,6 +40,7 @@ import androidx.compose.material.icons.rounded.MilitaryTech
 import androidx.compose.material.icons.rounded.RadioButtonUnchecked
 import androidx.compose.material3.Card
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
@@ -47,13 +54,18 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.alejandroestevemaza.gymtimerpro.R
+import com.alejandroestevemaza.gymtimerpro.core.designsystem.component.ProgressCalendarDayCell
+import com.alejandroestevemaza.gymtimerpro.core.designsystem.theme.GymTheme
 import com.alejandroestevemaza.gymtimerpro.core.model.CalendarDayState
 import com.alejandroestevemaza.gymtimerpro.core.model.CalendarWeekState
 import com.alejandroestevemaza.gymtimerpro.core.model.DayCompletionState
@@ -73,8 +85,6 @@ import java.time.format.FormatStyle
 import java.time.format.TextStyle
 import java.time.temporal.WeekFields
 import java.util.Locale
-
-private val RoutineActivityGreen = Color(0xFF4E7D4A)
 
 @Composable
 fun ProgressRoute(
@@ -103,6 +113,7 @@ fun ProgressScreen(
     onSelectPeriod: (ProgressPeriod) -> Unit,
     onSelectDay: (LocalDate) -> Unit,
     onDismissDayDetail: () -> Unit,
+    previewShowInlineDayDetail: Boolean = false,
 ) {
     val derivedState = uiState.derivedState ?: return
     val locale = remember { Locale.getDefault() }
@@ -110,42 +121,58 @@ fun ProgressScreen(
         DateTimeFormatter.ofPattern("LLLL yyyy", locale)
     }
     val dayFormatter = remember(locale) {
-        DateTimeFormatter.ofLocalizedDate(FormatStyle.FULL).withLocale(locale)
+        DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).withLocale(locale)
     }
 
-    if (uiState.selectedDay != null && uiState.selectedDayCompletions.isNotEmpty()) {
-        DayDetailSheet(
-            day = uiState.selectedDay,
-            completions = uiState.selectedDayCompletions,
-            dayFormatter = dayFormatter,
-            onDismiss = onDismissDayDetail,
-        )
-    }
+    Box(modifier = Modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .statusBarsPadding()
+                .navigationBarsPadding()
+                .padding(horizontal = GymTheme.spacing.s16, vertical = GymTheme.spacing.s12),
+            verticalArrangement = Arrangement.spacedBy(GymTheme.spacing.s20),
+        ) {
+            Text(
+                text = stringResource(R.string.app_navigation_progress),
+                style = GymTheme.type.title2Bold,
+                color = GymTheme.colors.textPrimary,
+            )
+            ChartsCard(
+                selectedPeriod = uiState.selectedPeriod,
+                periodSummary = derivedState.periodSummary,
+                onSelectPeriod = onSelectPeriod,
+            )
+            CalendarCard(
+                derivedState = derivedState,
+                monthLabel = derivedState.monthStart.format(monthFormatter),
+                locale = locale,
+                onSelectDay = onSelectDay,
+            )
+            ActivityCard(recentActivities = derivedState.recentActivities)
+            BadgesCard(badges = derivedState.badges)
+        }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(20.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
-    ) {
-        ChartsCard(
-            selectedPeriod = uiState.selectedPeriod,
-            periodSummary = derivedState.periodSummary,
-            onSelectPeriod = onSelectPeriod,
-        )
-        CalendarCard(
-            derivedState = derivedState,
-            monthLabel = derivedState.monthStart.format(monthFormatter),
-            locale = locale,
-            onSelectDay = onSelectDay,
-        )
-        ActivityCard(recentActivities = derivedState.recentActivities)
-        BadgesCard(badges = derivedState.badges)
+        if (uiState.selectedDay != null && uiState.selectedDayCompletions.isNotEmpty()) {
+            if (previewShowInlineDayDetail) {
+                DayDetailInlineOverlay(
+                    day = uiState.selectedDay,
+                    completions = uiState.selectedDayCompletions,
+                    dayFormatter = dayFormatter,
+                )
+            } else {
+                DayDetailSheet(
+                    day = uiState.selectedDay,
+                    completions = uiState.selectedDayCompletions,
+                    dayFormatter = dayFormatter,
+                    onDismiss = onDismissDayDetail,
+                )
+            }
+        }
     }
 }
 
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun ChartsCard(
     selectedPeriod: ProgressPeriod,
@@ -154,37 +181,188 @@ private fun ChartsCard(
 ) {
     val noneText = stringResource(R.string.progress_summary_none)
 
-    Card(modifier = Modifier.fillMaxWidth()) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(GymTheme.radii.r14),
+        color = GymTheme.colors.cardBackground,
+        border = BorderStroke(
+            width = GymTheme.borders.quaternary,
+            color = GymTheme.colors.divider,
+        ),
+    ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+                .padding(GymTheme.spacing.s14),
+            verticalArrangement = Arrangement.spacedBy(GymTheme.spacing.s14),
         ) {
-            SectionHeader(
-                icon = Icons.Rounded.BarChart,
-                title = stringResource(R.string.progress_charts_title),
-            )
-
-            FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
             ) {
-                ProgressPeriod.entries.forEach { period ->
-                    FilterChip(
-                        selected = period == selectedPeriod,
-                        onClick = { onSelectPeriod(period) },
-                        label = { Text(text = stringResource(period.labelRes())) },
+                Text(
+                    text = stringResource(R.string.progress_workouts_over_time_title),
+                    style = GymTheme.type.headlineSemibold,
+                    color = GymTheme.colors.textPrimary,
+                )
+                Row(
+                    modifier = Modifier.clickable {
+                        onSelectPeriod(selectedPeriod.next())
+                    },
+                    horizontalArrangement = Arrangement.spacedBy(GymTheme.spacing.s2),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        text = stringResource(selectedPeriod.labelRes()),
+                        style = GymTheme.type.subheadlineRegular,
+                        color = GymTheme.colors.iconTint,
+                    )
+                    Icon(
+                        imageVector = Icons.Rounded.ExpandMore,
+                        contentDescription = null,
+                        tint = GymTheme.colors.iconTint,
+                        modifier = Modifier.size(GymTheme.spacing.s16),
                     )
                 }
             }
 
-            SummaryGrid(
-                periodSummary = periodSummary,
-                noneText = noneText,
+            WorkoutsLineChart(
+                buckets = periodSummary.buckets,
+                maxY = periodSummary.buckets.maxOfOrNull { it.count } ?: 0,
             )
 
-            BucketsChart(buckets = periodSummary.buckets)
+            HorizontalDivider(color = GymTheme.colors.divider)
+            SummaryLine(
+                label = stringResource(R.string.progress_summary_top_routine),
+                value = periodSummary.mostRepeatedRoutineName ?: noneText,
+            )
+            SummaryLine(
+                label = stringResource(R.string.progress_summary_top_classification),
+                value = periodSummary.topClassificationName ?: noneText,
+            )
+        }
+    }
+}
+
+@Composable
+private fun SummaryLine(
+    label: String,
+    value: String,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = label,
+            style = GymTheme.type.subheadlineRegular,
+            color = GymTheme.colors.textPrimary,
+        )
+        Text(
+            text = value,
+            style = GymTheme.type.subheadlineRegular,
+            color = GymTheme.colors.textSecondary,
+        )
+    }
+}
+
+@Composable
+private fun WorkoutsLineChart(
+    buckets: List<ProgressBucket>,
+    maxY: Int,
+) {
+    val safeMaxY = maxOf(maxY, 1)
+    val spacing = GymTheme.spacing
+    val divider = GymTheme.colors.divider
+    val accent = GymTheme.colors.iconTint
+    val borderWidth = GymTheme.borders.quaternary
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(GymTheme.layout.progressChartHeight),
+    ) {
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            val chartBottom = size.height - spacing.s20.toPx()
+            val chartTop = spacing.s8.toPx()
+            val chartHeight = chartBottom - chartTop
+            val chartWidth = size.width - spacing.s20.toPx()
+            val left = 0f
+            val right = left + chartWidth
+
+            repeat(4) { index ->
+                val y = chartTop + chartHeight * index / 3f
+                drawLine(
+                    color = divider,
+                    start = Offset(left, y),
+                    end = Offset(right, y),
+                    strokeWidth = borderWidth.toPx(),
+                )
+            }
+
+            if (buckets.isEmpty()) {
+                return@Canvas
+            }
+
+            val stepX = if (buckets.size > 1) chartWidth / (buckets.size - 1) else 0f
+            val path = Path()
+            val points = buckets.mapIndexed { index, bucket ->
+                val x = left + stepX * index
+                val ratio = bucket.count.toFloat() / safeMaxY.toFloat()
+                val y = chartBottom - chartHeight * ratio
+                Offset(x, y)
+            }
+            points.forEachIndexed { index, point ->
+                if (index == 0) path.moveTo(point.x, point.y) else path.lineTo(point.x, point.y)
+            }
+
+            drawPath(
+                path = path,
+                color = accent,
+                style = androidx.compose.ui.graphics.drawscope.Stroke(
+                    width = spacing.s2.toPx(),
+                    cap = StrokeCap.Round,
+                ),
+            )
+            points.forEach { point ->
+                drawCircle(
+                    color = accent,
+                    radius = spacing.s4.toPx(),
+                    center = point,
+                )
+            }
+        }
+
+        Column(
+            modifier = Modifier
+                .align(Alignment.CenterEnd)
+                .padding(end = GymTheme.spacing.s2),
+            verticalArrangement = Arrangement.SpaceBetween,
+        ) {
+            listOf(maxY, (maxY * 2) / 3, maxY / 3, 0).forEach { yLabel ->
+                Text(
+                    text = yLabel.toString(),
+                    style = GymTheme.type.caption2Semibold,
+                    color = GymTheme.colors.textSecondary,
+                )
+            }
+        }
+
+        Row(
+            modifier = Modifier
+                .align(Alignment.BottomStart)
+                .fillMaxWidth()
+                .padding(end = GymTheme.spacing.s20),
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            buckets.forEach { bucket ->
+                Text(
+                    text = bucket.label,
+                    style = GymTheme.type.caption2Semibold,
+                    color = GymTheme.colors.textSecondary,
+                )
+            }
         }
     }
 }
@@ -194,10 +372,10 @@ private fun SummaryGrid(
     periodSummary: PeriodSummary,
     noneText: String,
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(GymTheme.spacing.s12)) {
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            horizontalArrangement = Arrangement.spacedBy(GymTheme.spacing.s12),
         ) {
             SummaryStatCard(
                 modifier = Modifier.weight(1f),
@@ -213,7 +391,7 @@ private fun SummaryGrid(
 
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            horizontalArrangement = Arrangement.spacedBy(GymTheme.spacing.s12),
         ) {
             SummaryStatCard(
                 modifier = Modifier.weight(1f),
@@ -237,24 +415,28 @@ private fun SummaryStatCard(
 ) {
     Surface(
         modifier = modifier,
-        shape = RoundedCornerShape(20.dp),
-        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f),
+        shape = RoundedCornerShape(GymTheme.radii.r12),
+        color = GymTheme.colors.metricBackground,
+        border = BorderStroke(
+            width = GymTheme.borders.quaternary,
+            color = GymTheme.colors.divider,
+        ),
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(6.dp),
+                .padding(GymTheme.spacing.s12),
+            verticalArrangement = Arrangement.spacedBy(GymTheme.spacing.s6),
         ) {
             Text(
                 text = label,
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = GymTheme.type.captionSemibold,
+                color = GymTheme.colors.textSecondary,
             )
             Text(
                 text = value,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold,
+                style = GymTheme.type.subheadlineSemibold,
+                color = GymTheme.colors.textPrimary,
             )
         }
     }
@@ -269,20 +451,20 @@ private fun BucketsChart(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .height(164.dp),
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
+            .height(GymTheme.layout.progressChartHeight),
+        horizontalArrangement = Arrangement.spacedBy(GymTheme.layout.progressCalendarGridGap),
         verticalAlignment = Alignment.Bottom,
     ) {
         buckets.forEach { bucket ->
             Column(
                 modifier = Modifier.weight(1f),
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(GymTheme.spacing.s8),
             ) {
                 Text(
                     text = bucket.count.toString(),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = GymTheme.type.caption2Semibold,
+                    color = GymTheme.colors.textSecondary,
                 )
                 Box(
                     modifier = Modifier
@@ -293,24 +475,24 @@ private fun BucketsChart(
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(2.dp)
-                            .background(MaterialTheme.colorScheme.surfaceVariant)
+                            .height(GymTheme.spacing.s2)
+                            .background(GymTheme.colors.secondaryButtonFill)
                     )
                     if (bucket.count > 0) {
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth(0.72f)
-                                .height((96f * bucket.count / maxCount).dp.coerceAtLeast(16.dp))
-                                .clip(RoundedCornerShape(topStart = 10.dp, topEnd = 10.dp))
-                                .background(MaterialTheme.colorScheme.primary)
+                                .height((96f * bucket.count / maxCount).dp.coerceAtLeast(GymTheme.spacing.s16))
+                                .clip(RoundedCornerShape(topStart = GymTheme.radii.r10, topEnd = GymTheme.radii.r10))
+                                .background(GymTheme.colors.iconTint)
                         )
                     }
                 }
                 Text(
                     text = bucket.label,
-                    style = MaterialTheme.typography.labelSmall,
+                    style = GymTheme.type.caption2Semibold,
                     textAlign = TextAlign.Center,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = GymTheme.colors.textSecondary,
                 )
             }
         }
@@ -324,23 +506,27 @@ private fun CalendarCard(
     locale: Locale,
     onSelectDay: (LocalDate) -> Unit,
 ) {
-    Card(modifier = Modifier.fillMaxWidth()) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(GymTheme.radii.r14),
+        color = GymTheme.colors.cardBackground,
+        border = BorderStroke(
+            width = GymTheme.borders.quaternary,
+            color = GymTheme.colors.divider,
+        ),
+    ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+                .padding(GymTheme.spacing.s14),
+            verticalArrangement = Arrangement.spacedBy(GymTheme.spacing.s12),
         ) {
-            SectionHeader(
-                icon = Icons.Rounded.CalendarMonth,
-                title = stringResource(R.string.progress_calendar_title),
-            )
             Text(
                 text = monthLabel.replaceFirstChar { char ->
                     if (char.isLowerCase()) char.titlecase(locale) else char.toString()
                 },
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold,
+                style = GymTheme.type.title2Bold,
+                color = GymTheme.colors.textPrimary,
             )
             WeekdayHeader(locale = locale)
             derivedState.calendarWeeks.forEach { week ->
@@ -366,19 +552,19 @@ private fun WeekdayHeader(
 
     Row(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        horizontalArrangement = Arrangement.spacedBy(GymTheme.layout.progressCalendarGridGap),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         dayLabels.forEach { label ->
             Text(
                 text = label,
                 modifier = Modifier.weight(1f),
-                style = MaterialTheme.typography.labelMedium,
+                style = GymTheme.type.caption2Semibold,
                 textAlign = TextAlign.Center,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                color = GymTheme.colors.textSecondary,
             )
         }
-        Spacer(modifier = Modifier.width(40.dp))
+        Spacer(modifier = Modifier.width(GymTheme.layout.progressStreakColumnWidth))
     }
 }
 
@@ -390,7 +576,7 @@ private fun CalendarWeekRow(
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        horizontalArrangement = Arrangement.spacedBy(GymTheme.layout.progressCalendarGridGap),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         week.days.forEach { day ->
@@ -401,7 +587,7 @@ private fun CalendarWeekRow(
             )
         }
         Box(
-            modifier = Modifier.width(40.dp),
+            modifier = Modifier.width(GymTheme.layout.progressStreakColumnWidth),
             contentAlignment = Alignment.Center,
         ) {
             if (week.showStreakIndicator) {
@@ -417,86 +603,20 @@ private fun CalendarDayCell(
     day: CalendarDayState,
     onSelectDay: (LocalDate) -> Unit,
 ) {
-    val isWorkoutDay = day.inCurrentMonth && day.workoutCount > 0
-    val isInteractive = isWorkoutDay
-    val backgroundColor: Color
-    val contentColor: Color
-    val border: BorderStroke?
-
-    when {
-        isWorkoutDay -> {
-            backgroundColor = MaterialTheme.colorScheme.primary
-            contentColor = MaterialTheme.colorScheme.onPrimary
-            border = null
-        }
-
-        !day.inCurrentMonth -> {
-            backgroundColor = Color.Transparent
-            contentColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.42f)
-            border = null
-        }
-
-        day.isToday -> {
-            backgroundColor = Color.Transparent
-            contentColor = MaterialTheme.colorScheme.primary
-            border = BorderStroke(2.dp, MaterialTheme.colorScheme.primary)
-        }
-
-        day.isFuture -> {
-            backgroundColor = Color.Transparent
-            contentColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.surfaceVariant)
-        }
-
-        else -> {
-            backgroundColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.65f)
-            contentColor = MaterialTheme.colorScheme.onSurfaceVariant
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.2f))
-        }
-    }
-
-    Box(
+    ProgressCalendarDayCell(
         modifier = modifier.aspectRatio(1f),
-        contentAlignment = Alignment.Center,
-    ) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .clip(CircleShape)
-                .background(backgroundColor)
-                .then(
-                    if (border != null) {
-                        Modifier.border(border = border, shape = CircleShape)
-                    } else {
-                        Modifier
-                    }
-                )
-                .then(
-                    if (isInteractive) {
-                        Modifier.clickable { onSelectDay(day.date) }
-                    } else {
-                        Modifier
-                    }
-                ),
-            contentAlignment = Alignment.Center,
-        ) {
-            if (isWorkoutDay) {
-                Icon(
-                    imageVector = Icons.Rounded.FitnessCenter,
-                    contentDescription = null,
-                    tint = contentColor,
-                    modifier = Modifier.size(16.dp),
-                )
-            } else {
-                Text(
-                    text = day.date.dayOfMonth.toString(),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = contentColor,
-                    textAlign = TextAlign.Center,
-                )
-            }
-        }
-    }
+        dayLabel = day.date.dayOfMonth.toString(),
+        hasWorkout = day.inCurrentMonth && day.workoutCount > 0,
+        isCurrentMonth = day.inCurrentMonth,
+        isToday = day.isToday,
+        isPast = !day.isFuture && !day.isToday,
+        isFuture = day.isFuture,
+        onClick = if (day.inCurrentMonth && day.workoutCount > 0) {
+            { onSelectDay(day.date) }
+        } else {
+            null
+        },
+    )
 }
 
 @Composable
@@ -506,47 +626,46 @@ private fun StreakIndicator(
     Surface(
         shape = CircleShape,
         color = if (streak > 0) {
-            MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)
+            GymTheme.colors.calendarStreak.copy(alpha = 0.14f)
         } else {
             Color.Transparent
         },
         border = BorderStroke(
-            width = 1.dp,
+            width = GymTheme.borders.quaternary,
             color = if (streak > 0) {
-                MaterialTheme.colorScheme.primary.copy(alpha = 0.45f)
+                GymTheme.colors.calendarStreak.copy(alpha = 0.45f)
             } else {
-                MaterialTheme.colorScheme.outline.copy(alpha = 0.4f)
+                GymTheme.colors.textSecondary.copy(alpha = 0.4f)
             },
         ),
     ) {
         Box(
-            modifier = Modifier.size(32.dp),
+            modifier = Modifier.size(GymTheme.layout.progressStreakIndicatorSize),
             contentAlignment = Alignment.Center,
         ) {
             if (streak > 0) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(2.dp),
+                    horizontalArrangement = Arrangement.spacedBy(GymTheme.spacing.s2),
                 ) {
                     Icon(
                         imageVector = Icons.Rounded.LocalFireDepartment,
                         contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(14.dp),
+                        tint = GymTheme.colors.calendarStreak,
+                        modifier = Modifier.size(GymTheme.spacing.s14),
                     )
                     Text(
                         text = streak.toString(),
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.primary,
-                        fontWeight = FontWeight.SemiBold,
+                        style = GymTheme.type.tinyFlame,
+                        color = GymTheme.colors.calendarStreak,
                     )
                 }
             } else {
                 Icon(
                     imageVector = Icons.Rounded.RadioButtonUnchecked,
                     contentDescription = null,
-                    tint = MaterialTheme.colorScheme.outline.copy(alpha = 0.7f),
-                    modifier = Modifier.size(18.dp),
+                    tint = GymTheme.colors.textSecondary.copy(alpha = 0.7f),
+                    modifier = Modifier.size(GymTheme.spacing.s16),
                 )
             }
         }
@@ -557,28 +676,37 @@ private fun StreakIndicator(
 private fun ActivityCard(
     recentActivities: List<RecentActivityCardState>,
 ) {
-    Card(modifier = Modifier.fillMaxWidth()) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(GymTheme.radii.r14),
+        color = GymTheme.colors.cardBackground,
+        border = BorderStroke(
+            width = GymTheme.borders.quaternary,
+            color = GymTheme.colors.divider,
+        ),
+    ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+                .padding(GymTheme.spacing.s14),
+            verticalArrangement = Arrangement.spacedBy(GymTheme.spacing.s12),
         ) {
-            SectionHeader(
-                icon = Icons.Rounded.History,
-                title = stringResource(R.string.progress_activity_title),
+            Text(
+                text = stringResource(R.string.progress_activity_title),
+                style = GymTheme.type.headlineSemibold,
+                color = GymTheme.colors.textPrimary,
             )
 
             if (recentActivities.isEmpty()) {
                 Text(
                     text = stringResource(R.string.progress_activity_empty),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = GymTheme.type.subheadlineRegular,
+                    color = GymTheme.colors.textSecondary,
                 )
             } else {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    horizontalArrangement = Arrangement.spacedBy(GymTheme.spacing.s12),
                 ) {
                     recentActivities.forEach { activity ->
                         ActivityItem(
@@ -598,9 +726,9 @@ private fun ActivityItem(
     activity: RecentActivityCardState,
 ) {
     val accentColor = if (activity.type == RecentActivityType.Classification) {
-        MaterialTheme.colorScheme.primary
+        GymTheme.colors.iconTint
     } else {
-        RoutineActivityGreen
+        GymTheme.colors.completed
     }
     val icon = if (activity.type == RecentActivityType.Classification) {
         Icons.Rounded.LocalOffer
@@ -610,30 +738,35 @@ private fun ActivityItem(
 
     Surface(
         modifier = modifier,
-        shape = RoundedCornerShape(20.dp),
-        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f),
+        shape = RoundedCornerShape(GymTheme.radii.r12),
+        color = GymTheme.colors.metricBackground,
+        border = BorderStroke(
+            width = GymTheme.borders.quaternary,
+            color = GymTheme.colors.divider,
+        ),
     ) {
         Column(
             modifier = Modifier
+                .heightIn(min = GymTheme.layout.progressActivityMinHeight)
                 .fillMaxWidth()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
+                .padding(GymTheme.spacing.s10),
+            verticalArrangement = Arrangement.spacedBy(GymTheme.spacing.s10),
         ) {
             Icon(
                 imageVector = icon,
                 contentDescription = null,
                 tint = accentColor,
-                modifier = Modifier.size(22.dp),
+                modifier = Modifier.size(GymTheme.spacing.s20),
             )
             Text(
                 text = activity.title,
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.SemiBold,
+                style = GymTheme.type.subheadlineSemibold,
+                color = GymTheme.colors.textPrimary,
             )
             Text(
                 text = activity.dateTimeText,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = GymTheme.type.footnoteRegular,
+                color = GymTheme.colors.textSecondary,
             )
         }
     }
@@ -643,22 +776,31 @@ private fun ActivityItem(
 private fun BadgesCard(
     badges: List<ProgressBadgeState>,
 ) {
-    Card(modifier = Modifier.fillMaxWidth()) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(GymTheme.radii.r14),
+        color = GymTheme.colors.cardBackground,
+        border = BorderStroke(
+            width = GymTheme.borders.quaternary,
+            color = GymTheme.colors.divider,
+        ),
+    ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+                .padding(GymTheme.spacing.s14),
+            verticalArrangement = Arrangement.spacedBy(GymTheme.spacing.s12),
         ) {
-            SectionHeader(
-                icon = Icons.Rounded.MilitaryTech,
-                title = stringResource(R.string.progress_badges_title),
+            Text(
+                text = stringResource(R.string.progress_badges_title),
+                style = GymTheme.type.headlineSemibold,
+                color = GymTheme.colors.textPrimary,
             )
 
             badges.chunked(2).forEach { rowBadges ->
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    horizontalArrangement = Arrangement.spacedBy(GymTheme.spacing.s10),
                 ) {
                     rowBadges.forEach { badge ->
                         BadgeCard(
@@ -682,50 +824,51 @@ private fun BadgeCard(
 ) {
     val icon = if (badge.unlocked) Icons.Rounded.MilitaryTech else Icons.Rounded.Lock
     val iconTint = if (badge.unlocked) {
-        MaterialTheme.colorScheme.primary
+        GymTheme.colors.badgeUnlocked
     } else {
-        MaterialTheme.colorScheme.onSurfaceVariant
+        GymTheme.colors.textSecondary
     }
     val containerColor = if (badge.unlocked) {
-        MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+        GymTheme.colors.badgeUnlocked.copy(alpha = 0.15f)
     } else {
-        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f)
+        GymTheme.colors.metricBackground
     }
 
     Surface(
         modifier = modifier,
-        shape = RoundedCornerShape(20.dp),
+        shape = RoundedCornerShape(GymTheme.radii.r12),
         color = containerColor,
         border = BorderStroke(
-            width = 1.dp,
+            width = GymTheme.borders.quaternary,
             color = if (badge.unlocked) {
-                MaterialTheme.colorScheme.primary.copy(alpha = 0.22f)
+                GymTheme.colors.badgeUnlocked.copy(alpha = 0.45f)
             } else {
-                MaterialTheme.colorScheme.outline.copy(alpha = 0.18f)
+                GymTheme.colors.divider
             },
         ),
     ) {
         Column(
             modifier = Modifier
+                .heightIn(min = GymTheme.layout.progressBadgeMinHeight)
                 .fillMaxWidth()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
+                .padding(GymTheme.spacing.s10),
+            verticalArrangement = Arrangement.spacedBy(GymTheme.spacing.s10),
         ) {
             Icon(
                 imageVector = icon,
                 contentDescription = null,
                 tint = iconTint,
-                modifier = Modifier.size(22.dp),
+                modifier = Modifier.size(GymTheme.spacing.s20),
             )
             Text(
                 text = stringResource(badge.id.titleRes()),
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.SemiBold,
+                style = GymTheme.type.subheadlineSemibold,
+                color = GymTheme.colors.textPrimary,
             )
             Text(
                 text = stringResource(badge.id.subtitleRes()),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = GymTheme.type.footnoteRegular,
+                color = GymTheme.colors.textSecondary,
             )
         }
     }
@@ -744,13 +887,13 @@ private fun DayDetailSheet(
             modifier = Modifier
                 .fillMaxWidth()
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 20.dp, vertical = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp),
+                .padding(horizontal = GymTheme.spacing.s20, vertical = GymTheme.spacing.s12),
+            verticalArrangement = Arrangement.spacedBy(GymTheme.spacing.s4),
         ) {
             Text(
                 text = day.format(dayFormatter),
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.SemiBold,
+                style = GymTheme.type.title2Bold,
+                color = GymTheme.colors.textPrimary,
             )
             completions.forEach { completion ->
                 ListItem(
@@ -764,31 +907,82 @@ private fun DayDetailSheet(
                     },
                 )
             }
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(GymTheme.spacing.s12))
         }
     }
 }
 
 @Composable
-private fun SectionHeader(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    title: String,
+private fun DayDetailInlineOverlay(
+    day: LocalDate,
+    completions: List<DayCompletionState>,
+    dayFormatter: DateTimeFormatter,
 ) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.Black.copy(alpha = 0.08f)),
     ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.primary,
-        )
-        Text(
-            text = title,
-            style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.Bold,
-        )
+        Surface(
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .padding(horizontal = GymTheme.spacing.s2, vertical = GymTheme.spacing.s24)
+                .fillMaxWidth(),
+            shape = RoundedCornerShape(GymTheme.radii.r20),
+            color = MaterialTheme.colorScheme.background,
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = GymTheme.spacing.s16, vertical = GymTheme.spacing.s20),
+                verticalArrangement = Arrangement.spacedBy(GymTheme.spacing.s16),
+            ) {
+                Text(
+                    text = day.format(dayFormatter),
+                    modifier = Modifier.fillMaxWidth(),
+                    style = GymTheme.type.headlineSemibold,
+                    textAlign = TextAlign.Center,
+                    color = GymTheme.colors.textPrimary,
+                )
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(GymTheme.radii.r16),
+                    color = GymTheme.colors.cardBackground,
+                ) {
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        completions.forEachIndexed { index, completion ->
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = GymTheme.spacing.s16, vertical = GymTheme.spacing.s12),
+                                verticalArrangement = Arrangement.spacedBy(GymTheme.spacing.s2),
+                            ) {
+                                Text(
+                                    text = completion.routineName,
+                                    style = GymTheme.type.headlineSemibold,
+                                    color = GymTheme.colors.textPrimary,
+                                )
+                                Text(
+                                    text = completion.completionTimeText,
+                                    style = GymTheme.type.footnoteRegular,
+                                    color = GymTheme.colors.textSecondary,
+                                )
+                            }
+                            if (index != completions.lastIndex) {
+                                HorizontalDivider(color = GymTheme.colors.divider)
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
+}
+
+private fun ProgressPeriod.next(): ProgressPeriod {
+    val values = ProgressPeriod.entries
+    val currentIndex = values.indexOf(this)
+    return values[(currentIndex + 1) % values.size]
 }
 
 private fun ProgressPeriod.labelRes(): Int = when (this) {

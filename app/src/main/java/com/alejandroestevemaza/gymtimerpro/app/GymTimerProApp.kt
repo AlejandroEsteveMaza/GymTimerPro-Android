@@ -1,17 +1,8 @@
 package com.alejandroestevemaza.gymtimerpro.app
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
@@ -22,13 +13,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.draw.blur
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.compose.NavHost
@@ -37,6 +23,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.alejandroestevemaza.gymtimerpro.R
 import com.alejandroestevemaza.gymtimerpro.app.navigation.AppTab
+import com.alejandroestevemaza.gymtimerpro.core.designsystem.component.ProLockedOverlay
 import com.alejandroestevemaza.gymtimerpro.core.designsystem.theme.GymTimerProTheme
 import com.alejandroestevemaza.gymtimerpro.core.model.DailyUsageState
 import com.alejandroestevemaza.gymtimerpro.core.model.TrainingDefaults
@@ -225,53 +212,14 @@ private fun PremiumFeatureGate(
     onUnlock: () -> Unit,
     content: @Composable () -> Unit,
 ) {
-    Box(modifier = Modifier.fillMaxSize()) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .blur(if (isUnlocked) 0.dp else 10.dp)
-                .alpha(if (isUnlocked) 1f else 0.18f)
-        ) {
-            content()
-        }
-
-        AnimatedVisibility(
-            visible = !isUnlocked,
-            modifier = Modifier.fillMaxSize(),
-        ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .clickable(onClick = {}),
-                contentAlignment = Alignment.Center,
-            ) {
-                Card {
-                    Column(
-                        modifier = Modifier
-                            .background(MaterialTheme.colorScheme.surface)
-                            .padding(24.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp),
-                    ) {
-                        Text(
-                            text = title,
-                            style = MaterialTheme.typography.headlineSmall,
-                            fontWeight = FontWeight.Bold,
-                        )
-                        Text(
-                            text = message,
-                            style = MaterialTheme.typography.bodyMedium,
-                        )
-                        Button(
-                            onClick = onUnlock,
-                            modifier = Modifier.fillMaxWidth(),
-                        ) {
-                            Text(text = actionTitle)
-                        }
-                    }
-                }
-            }
-        }
-    }
+    ProLockedOverlay(
+        isUnlocked = isUnlocked,
+        title = title,
+        message = message,
+        actionText = actionTitle,
+        onUnlock = onUnlock,
+        content = content,
+    )
 }
 
 private fun normalizedDailyUsage(

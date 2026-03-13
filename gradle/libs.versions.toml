@@ -15,6 +15,8 @@ kotlin = "2.2.10"
 navigationCompose = "2.9.7"
 room = "2.8.4"
 playBilling = "8.3.0"
+robolectric = "4.13"
+roborazzi = "1.14.0"
 
 [libraries]
 androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activityCompose" }
@@ -39,6 +41,9 @@ androidx-room-runtime = { group = "androidx.room", name = "room-runtime", versio
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 material = { group = "com.google.android.material", name = "material", version.ref = "material" }
 google-play-billing = { group = "com.android.billingclient", name = "billing-ktx", version.ref = "playBilling" }
+robolectric = { group = "org.robolectric", name = "robolectric", version.ref = "robolectric" }
+roborazzi = { group = "io.github.takahirom.roborazzi", name = "roborazzi", version.ref = "roborazzi" }
+androidx-test-core = { group = "androidx.test", name = "core", version = "1.6.1" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

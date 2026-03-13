@@ -14,10 +14,13 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.border
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -32,12 +35,9 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -47,14 +47,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.alejandroestevemaza.gymtimerpro.R
+import com.alejandroestevemaza.gymtimerpro.core.designsystem.component.GymComponentState
+import com.alejandroestevemaza.gymtimerpro.core.designsystem.component.PaywallPlanCard
+import com.alejandroestevemaza.gymtimerpro.core.designsystem.component.PrimaryCtaButton
+import com.alejandroestevemaza.gymtimerpro.core.designsystem.theme.GymTheme
 import com.alejandroestevemaza.gymtimerpro.core.model.BillingPeriod
 import com.alejandroestevemaza.gymtimerpro.core.model.BillingPeriodUnit
 import com.alejandroestevemaza.gymtimerpro.core.model.PremiumPlanKind
@@ -122,9 +124,6 @@ private fun PaywallDialogContent(
     onRestore: () -> Unit,
 ) {
     val copySpec = uiState.request.context.copySpec()
-    val locale = remember { Locale.getDefault() }
-    val uriHandler = LocalUriHandler.current
-    val activity = LocalContext.current.findActivity()
 
     if (uiState.purchaseError != null) {
         AlertDialog(
@@ -164,65 +163,105 @@ private fun PaywallDialogContent(
             usePlatformDefaultWidth = false,
         ),
     ) {
-        Surface(modifier = Modifier.fillMaxSize()) {
-            Scaffold(
-                topBar = {
-                    TopAppBar(
-                        title = {},
-                        actions = {
-                            IconButton(
-                                onClick = onDismiss,
-                                enabled = !uiState.isProcessing,
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Rounded.Close,
-                                    contentDescription = stringResource(R.string.common_cancel),
-                                )
-                            }
-                        },
-                    )
-                }
-            ) { innerPadding ->
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .verticalScroll(rememberScrollState())
-                        .padding(innerPadding)
-                        .padding(horizontal = 20.dp, vertical = 12.dp),
-                    verticalArrangement = Arrangement.spacedBy(20.dp),
+        PaywallScreenContent(
+            uiState = uiState,
+            config = config,
+            copySpec = copySpec,
+            onDismiss = onDismiss,
+            onSelectProduct = onSelectProduct,
+            onPurchase = onPurchase,
+            onRestore = onRestore,
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+internal fun PaywallScreenContent(
+    uiState: PaywallUiState,
+    config: PaywallConfig,
+    copySpec: PaywallCopySpec,
+    onDismiss: () -> Unit,
+    onSelectProduct: (String) -> Unit,
+    onPurchase: (Activity) -> Unit,
+    onRestore: () -> Unit,
+) {
+    val locale = remember { Locale.getDefault() }
+    val uriHandler = LocalUriHandler.current
+    val activity = LocalContext.current.findActivity()
+
+    Surface(modifier = Modifier.fillMaxSize()) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.TopCenter,
+        ) {
+            Column(
+                modifier = Modifier
+                    .widthIn(max = GymTheme.layout.contentMaxWidthExpanded)
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState())
+                    .statusBarsPadding()
+                    .navigationBarsPadding()
+                    .padding(horizontal = GymTheme.spacing.s20)
+                    .padding(top = GymTheme.spacing.s12, bottom = GymTheme.spacing.s24),
+                verticalArrangement = Arrangement.spacedBy(GymTheme.spacing.s20),
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End,
                 ) {
-                    PaywallHeader(
-                        copySpec = copySpec,
-                        uiState = uiState,
-                    )
-                    PaywallBenefits(copySpec = copySpec)
-                    if (copySpec.includeSectionTitleRes != null && copySpec.includeItemRes.isNotEmpty()) {
-                        PaywallIncludeSection(copySpec = copySpec)
+                    Box(
+                        modifier = Modifier
+                            .size(GymTheme.layout.minTapHeight)
+                            .background(
+                                color = GymTheme.colors.secondaryButtonFill,
+                                shape = CircleShape,
+                            ),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        IconButton(
+                            onClick = onDismiss,
+                            enabled = !uiState.isProcessing,
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.Close,
+                                contentDescription = stringResource(R.string.common_cancel),
+                                tint = GymTheme.colors.textPrimary,
+                            )
+                        }
                     }
-                    PaywallPlansSection(
-                        uiState = uiState,
-                        copySpec = copySpec,
-                        locale = locale,
-                        onSelectProduct = onSelectProduct,
-                    )
-                    PaywallActions(
-                        uiState = uiState,
-                        copySpec = copySpec,
-                        onPurchase = {
-                            if (activity != null) {
-                                onPurchase(activity)
-                            }
-                        },
-                        onDismiss = onDismiss,
-                    )
-                    PaywallLegal(copySpec = copySpec)
-                    PaywallLinks(
-                        config = config,
-                        isProcessing = uiState.isProcessing,
-                        onRestore = onRestore,
-                        onOpenUrl = uriHandler::openUri,
-                    )
                 }
+                PaywallHeader(
+                    copySpec = copySpec,
+                    uiState = uiState,
+                )
+                PaywallBenefits(copySpec = copySpec)
+                if (copySpec.includeSectionTitleRes != null && copySpec.includeItemRes.isNotEmpty()) {
+                    PaywallIncludeSection(copySpec = copySpec)
+                }
+                PaywallPlansSection(
+                    uiState = uiState,
+                    copySpec = copySpec,
+                    locale = locale,
+                    onSelectProduct = onSelectProduct,
+                )
+                PaywallActions(
+                    uiState = uiState,
+                    copySpec = copySpec,
+                    onPurchase = {
+                        if (activity != null) {
+                            onPurchase(activity)
+                        }
+                    },
+                    onDismiss = onDismiss,
+                )
+                PaywallLegal(copySpec = copySpec)
+                PaywallLinks(
+                    config = config,
+                    isProcessing = uiState.isProcessing,
+                    onRestore = onRestore,
+                    onOpenUrl = uriHandler::openUri,
+                )
             }
         }
     }
@@ -233,33 +272,36 @@ private fun PaywallHeader(
     copySpec: PaywallCopySpec,
     uiState: PaywallUiState,
 ) {
-    Card(modifier = Modifier.fillMaxWidth()) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = androidx.compose.foundation.shape.RoundedCornerShape(GymTheme.radii.r20),
+    ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+                .padding(GymTheme.spacing.s16),
+            verticalArrangement = Arrangement.spacedBy(GymTheme.spacing.s12),
         ) {
             Text(
                 text = stringResource(R.string.paywall_badge_pro),
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.primary,
+                style = GymTheme.type.captionSemibold,
+                color = GymTheme.colors.iconTint,
                 modifier = Modifier
                     .background(
-                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.14f),
-                        shape = RoundedCornerShape(999.dp),
+                        color = GymTheme.colors.iconTint.copy(alpha = 0.14f),
+                        shape = RoundedCornerShape(GymTheme.radii.capsule),
                     )
-                    .padding(horizontal = 10.dp, vertical = 4.dp),
+                    .padding(horizontal = GymTheme.spacing.s10, vertical = GymTheme.spacing.s4),
             )
             Text(
                 text = stringResource(copySpec.titleRes),
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold,
+                style = GymTheme.type.title2Bold,
+                color = GymTheme.colors.textPrimary,
             )
             Text(
                 text = stringResource(copySpec.subtitleRes),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = GymTheme.type.subheadlineRegular,
+                color = GymTheme.colors.textSecondary,
             )
             if (uiState.request.consumedToday >= uiState.request.dailyLimit) {
                 Text(
@@ -268,8 +310,8 @@ private fun PaywallHeader(
                         uiState.request.consumedToday,
                         uiState.request.dailyLimit,
                     ),
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = GymTheme.type.footnoteSemibold,
+                    color = GymTheme.colors.textSecondary,
                 )
             }
         }
@@ -280,27 +322,31 @@ private fun PaywallHeader(
 private fun PaywallBenefits(
     copySpec: PaywallCopySpec,
 ) {
-    Card(modifier = Modifier.fillMaxWidth()) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = androidx.compose.foundation.shape.RoundedCornerShape(GymTheme.radii.r20),
+    ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
+                .padding(GymTheme.spacing.s16),
+            verticalArrangement = Arrangement.spacedBy(GymTheme.spacing.s10),
         ) {
             SectionTitle(title = stringResource(copySpec.benefitsTitleRes))
             copySpec.bulletRes.take(3).forEach { bulletRes ->
                 Row(
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    horizontalArrangement = Arrangement.spacedBy(GymTheme.spacing.s10),
                     verticalAlignment = Alignment.Top,
                 ) {
                     Icon(
                         imageVector = Icons.Rounded.CheckCircle,
                         contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
+                        tint = GymTheme.colors.iconTint,
                     )
                     Text(
                         text = stringResource(bulletRes),
-                        style = MaterialTheme.typography.bodyMedium,
+                        style = GymTheme.type.subheadlineRegular,
+                        color = GymTheme.colors.textPrimary,
                     )
                 }
             }
@@ -312,31 +358,35 @@ private fun PaywallBenefits(
 private fun PaywallIncludeSection(
     copySpec: PaywallCopySpec,
 ) {
-    Card(modifier = Modifier.fillMaxWidth()) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = androidx.compose.foundation.shape.RoundedCornerShape(GymTheme.radii.r20),
+    ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+                .padding(GymTheme.spacing.s16),
+            verticalArrangement = Arrangement.spacedBy(GymTheme.spacing.s8),
         ) {
             SectionTitle(title = stringResource(copySpec.includeSectionTitleRes!!))
             copySpec.includeItemRes.forEach { includeRes ->
                 Row(
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    horizontalArrangement = Arrangement.spacedBy(GymTheme.spacing.s10),
                     verticalAlignment = Alignment.Top,
                 ) {
                     Box(
                         modifier = Modifier
-                            .padding(top = 8.dp)
-                            .size(6.dp)
+                            .padding(top = GymTheme.spacing.s8)
+                            .size(GymTheme.spacing.s6)
                             .background(
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                color = GymTheme.colors.textSecondary,
                                 shape = CircleShape,
                             )
                     )
                     Text(
                         text = stringResource(includeRes),
-                        style = MaterialTheme.typography.bodySmall,
+                        style = GymTheme.type.footnoteRegular,
+                        color = GymTheme.colors.textPrimary,
                     )
                 }
             }
@@ -361,12 +411,15 @@ private fun PaywallPlansSection(
         )
     }
 
-    Card(modifier = Modifier.fillMaxWidth()) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = androidx.compose.foundation.shape.RoundedCornerShape(GymTheme.radii.r20),
+    ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
+                .padding(GymTheme.spacing.s16),
+            verticalArrangement = Arrangement.spacedBy(GymTheme.spacing.s10),
         ) {
             SectionTitle(title = stringResource(copySpec.plansTitleRes))
             if (trialText != null) {
@@ -374,22 +427,22 @@ private fun PaywallPlansSection(
                     modifier = Modifier
                         .fillMaxWidth()
                         .background(
-                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
-                            shape = RoundedCornerShape(999.dp),
+                            color = GymTheme.colors.iconTint.copy(alpha = 0.12f),
+                            shape = RoundedCornerShape(GymTheme.radii.capsule),
                         )
-                        .padding(horizontal = 12.dp, vertical = 8.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        .padding(horizontal = GymTheme.spacing.s12, vertical = GymTheme.spacing.s8),
+                    horizontalArrangement = Arrangement.spacedBy(GymTheme.spacing.s8),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Icon(
                         imageVector = Icons.Rounded.AutoAwesome,
                         contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
+                        tint = GymTheme.colors.iconTint,
                     )
                     Text(
                         text = trialText,
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.Bold,
+                        style = GymTheme.type.subheadlineSemibold,
+                        color = GymTheme.colors.textPrimary,
                     )
                 }
             }
@@ -397,110 +450,38 @@ private fun PaywallPlansSection(
             if (uiState.products.isEmpty()) {
                 Text(
                     text = stringResource(R.string.paywall_price_loading),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = GymTheme.type.subheadlineRegular,
+                    color = GymTheme.colors.textSecondary,
                 )
             } else {
                 uiState.products.forEach { product ->
-                    PlanCard(
-                        product = product,
-                        isSelected = uiState.selectedProductId == product.id,
-                        copySpec = copySpec,
-                        locale = locale,
-                        genericPeriodText = genericPeriodText,
-                        onSelect = { onSelectProduct(product.id) },
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun PlanCard(
-    product: PremiumProduct,
-    isSelected: Boolean,
-    copySpec: PaywallCopySpec,
-    locale: Locale,
-    genericPeriodText: String,
-    onSelect: () -> Unit,
-) {
-    val label = when (product.planKind) {
-        PremiumPlanKind.Yearly -> stringResource(copySpec.annualLabelRes)
-        PremiumPlanKind.Monthly -> stringResource(copySpec.monthlyLabelRes)
-        PremiumPlanKind.Other -> product.title
-    }
-    val badge = when (product.planKind) {
-        PremiumPlanKind.Yearly -> stringResource(copySpec.annualBadgeRes)
-        PremiumPlanKind.Monthly -> copySpec.monthlyBadgeRes?.let { stringResource(it) }
-        PremiumPlanKind.Other -> null
-    }
-    val priceLine = remember(product, locale, genericPeriodText) {
-        priceLine(
-            product = product,
-            locale = locale,
-            genericPeriodText = genericPeriodText,
-        )
-    }
-
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(14.dp),
-        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f),
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable(onClick = onSelect)
-                .then(
-                    if (isSelected) {
-                        Modifier.border(
-                            width = 1.5.dp,
-                            color = MaterialTheme.colorScheme.primary,
-                            shape = RoundedCornerShape(14.dp),
-                        )
-                    } else {
-                        Modifier
+                    val label = when (product.planKind) {
+                        PremiumPlanKind.Yearly -> stringResource(copySpec.annualLabelRes)
+                        PremiumPlanKind.Monthly -> stringResource(copySpec.monthlyLabelRes)
+                        PremiumPlanKind.Other -> product.title
                     }
-                )
-                .padding(12.dp),
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
-            verticalAlignment = Alignment.Top,
-        ) {
-            Icon(
-                imageVector = if (isSelected) Icons.Rounded.CheckCircle else Icons.Rounded.RadioButtonUnchecked,
-                contentDescription = null,
-                tint = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(4.dp),
-            ) {
-                Text(
-                    text = label,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold,
-                )
-                if (badge != null) {
-                    Text(
-                        text = badge,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier
-                            .background(
-                                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.14f),
-                                shape = RoundedCornerShape(999.dp),
-                            )
-                            .padding(horizontal = 8.dp, vertical = 3.dp),
+                    val badge = when (product.planKind) {
+                        PremiumPlanKind.Yearly -> stringResource(copySpec.annualBadgeRes)
+                        PremiumPlanKind.Monthly -> copySpec.monthlyBadgeRes?.let { stringResource(it) }
+                        PremiumPlanKind.Other -> null
+                    }
+                    val priceLine = remember(product, locale, genericPeriodText) {
+                        priceLine(
+                            product = product,
+                            locale = locale,
+                            genericPeriodText = genericPeriodText,
+                        )
+                    }
+                    PaywallPlanCard(
+                        title = label,
+                        price = priceLine,
+                        badge = badge,
+                        selected = uiState.selectedProductId == product.id,
+                        onClick = { onSelectProduct(product.id) },
+                        state = if (uiState.isProcessing) GymComponentState.Disabled else GymComponentState.Normal,
                     )
                 }
             }
-            Text(
-                text = priceLine,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold,
-                textAlign = TextAlign.End,
-            )
         }
     }
 }
@@ -514,15 +495,17 @@ private fun PaywallActions(
 ) {
     Column(
         modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(10.dp),
+        verticalArrangement = Arrangement.spacedBy(GymTheme.spacing.s10),
     ) {
-        Button(
+        PrimaryCtaButton(
+            text = stringResource(copySpec.ctaPrimaryRes),
             onClick = onPurchase,
-            enabled = !uiState.isProcessing && !uiState.isLoadingProducts && uiState.selectedProductId != null,
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            Text(text = stringResource(copySpec.ctaPrimaryRes))
-        }
+            state = when {
+                uiState.isProcessing -> GymComponentState.Loading
+                uiState.isLoadingProducts || uiState.selectedProductId == null -> GymComponentState.Disabled
+                else -> GymComponentState.Normal
+            },
+        )
 
         if (copySpec.ctaSecondaryRes != null) {
             TextButton(
@@ -541,8 +524,8 @@ private fun PaywallActions(
         Text(
             text = stringResource(copySpec.trustLineRes),
             modifier = Modifier.fillMaxWidth(),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            style = GymTheme.type.footnoteRegular,
+            color = GymTheme.colors.textSecondary,
             textAlign = TextAlign.Center,
         )
     }
@@ -554,17 +537,17 @@ private fun PaywallLegal(
 ) {
     Column(
         modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(4.dp),
+        verticalArrangement = Arrangement.spacedBy(GymTheme.spacing.s4),
     ) {
         Text(
             text = stringResource(copySpec.legalLine1Res),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            style = GymTheme.type.captionRegular,
+            color = GymTheme.colors.textSecondary,
         )
         Text(
             text = stringResource(copySpec.legalLine2Res),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            style = GymTheme.type.captionRegular,
+            color = GymTheme.colors.textSecondary,
         )
     }
 }
@@ -578,7 +561,7 @@ private fun PaywallLinks(
 ) {
     Column(
         modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(10.dp),
+        verticalArrangement = Arrangement.spacedBy(GymTheme.spacing.s10),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         TextButton(
@@ -597,7 +580,7 @@ private fun PaywallLinks(
             }
         }
 
-        Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(GymTheme.spacing.s16)) {
             if (config.termsUri != null) {
                 TextButton(
                     onClick = { onOpenUrl(config.termsUri.toString()) },
@@ -624,9 +607,8 @@ private fun SectionTitle(
 ) {
     Text(
         text = title,
-        style = MaterialTheme.typography.titleSmall,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-        fontWeight = FontWeight.SemiBold,
+        style = GymTheme.type.subheadlineSemibold,
+        color = GymTheme.colors.textSecondary,
     )
 }
 

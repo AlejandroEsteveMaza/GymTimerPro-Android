@@ -6,11 +6,7 @@ plugins {
 
 android {
     namespace = "com.alejandroestevemaza.gymtimerpro"
-    compileSdk {
-        version = release(36) {
-            minorApiLevel = 1
-        }
-    }
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.alejandroestevemaza.gymtimerpro"
@@ -23,6 +19,9 @@ android {
     }
     buildFeatures {
         compose = true
+    }
+    testOptions {
+        unitTests.isIncludeAndroidResources = true
     }
 
     buildTypes {
@@ -37,6 +36,22 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
+    }
+}
+
+tasks.withType<Test>().configureEach {
+    listOf(
+        "roborazzi.test.record",
+        "roborazzi.test.compare",
+        "roborazzi.test.verify",
+        "roborazzi.output.dir",
+        "roborazzi.result.dir",
+        "roborazzi.record.resizeScale",
+        "roborazzi.debug",
+    ).forEach { key ->
+        System.getProperty(key)?.let { value ->
+            systemProperty(key, value)
+        }
     }
 }
 
@@ -67,6 +82,9 @@ dependencies {
     implementation(libs.material)
     ksp(libs.androidx.room.compiler)
     testImplementation(libs.junit)
+    testImplementation(libs.robolectric)
+    testImplementation(libs.roborazzi)
+    testImplementation(libs.androidx.test.core)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     debugImplementation(libs.androidx.compose.ui.tooling)
