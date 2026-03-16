@@ -15,9 +15,11 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.navigationBarsPadding
@@ -31,6 +33,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.FitnessCenter
 import androidx.compose.material.icons.rounded.Layers
 import androidx.compose.material.icons.rounded.Remove
@@ -40,6 +43,7 @@ import androidx.compose.material.icons.rounded.Verified
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.VerticalDivider
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.Icon
@@ -467,6 +471,17 @@ private fun RoutinePickerDialog(
                     onValueChange = onSearchQueryChanged,
                     modifier = Modifier.fillMaxWidth(),
                     label = { Text(text = stringResource(R.string.routines_search_hint)) },
+                    trailingIcon = {
+                        if (pickerState.searchQuery.isNotBlank()) {
+                            IconButton(onClick = { onSearchQueryChanged("") }) {
+                                Icon(
+                                    imageVector = Icons.Rounded.Close,
+                                    contentDescription = stringResource(R.string.routines_cancel),
+                                    tint = GymTheme.colors.textSecondary,
+                                )
+                            }
+                        }
+                    },
                     singleLine = true,
                 )
 
@@ -634,22 +649,67 @@ private fun TrainingProgressCard(
                 shape = androidx.compose.foundation.shape.RoundedCornerShape(GymTheme.radii.r16),
                 color = GymTheme.colors.trainingMetricBackground,
             ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(GymTheme.spacing.s12),
-                    verticalArrangement = Arrangement.spacedBy(GymTheme.spacing.s6),
-                ) {
-                    Text(
-                        text = stringResource(R.string.training_sets_label).uppercase(),
-                        style = GymTheme.type.captionRegular,
-                        color = GymTheme.colors.textSecondary,
-                    )
-                    Text(
-                        text = "${uiState.session.currentSet} / ${uiState.session.totalSets}",
-                        style = GymTheme.type.numericMetric,
-                        color = GymTheme.colors.textPrimary,
-                    )
+                val routineReps = uiState.session.appliedRoutineReps
+                if (routineReps != null) {
+                    // 50/50: sets | reps de la rutina seleccionada
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(IntrinsicSize.Min)
+                            .padding(GymTheme.spacing.s12),
+                        horizontalArrangement = Arrangement.spacedBy(GymTheme.spacing.s12),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Column(
+                            modifier = Modifier.weight(1f),
+                            verticalArrangement = Arrangement.spacedBy(GymTheme.spacing.s6),
+                        ) {
+                            Text(
+                                text = stringResource(R.string.training_sets_label).uppercase(),
+                                style = GymTheme.type.captionRegular,
+                                color = GymTheme.colors.textSecondary,
+                            )
+                            Text(
+                                text = "${uiState.session.currentSet} / ${uiState.session.totalSets}",
+                                style = GymTheme.type.numericMetric,
+                                color = GymTheme.colors.textPrimary,
+                            )
+                        }
+                        VerticalDivider(color = GymTheme.colors.divider)
+                        Column(
+                            modifier = Modifier.weight(1f),
+                            verticalArrangement = Arrangement.spacedBy(GymTheme.spacing.s6),
+                        ) {
+                            Text(
+                                text = stringResource(R.string.routines_reps_label).uppercase(),
+                                style = GymTheme.type.captionRegular,
+                                color = GymTheme.colors.textSecondary,
+                            )
+                            Text(
+                                text = routineReps.toString(),
+                                style = GymTheme.type.numericMetric,
+                                color = GymTheme.colors.textPrimary,
+                            )
+                        }
+                    }
+                } else {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(GymTheme.spacing.s12),
+                        verticalArrangement = Arrangement.spacedBy(GymTheme.spacing.s6),
+                    ) {
+                        Text(
+                            text = stringResource(R.string.training_sets_label).uppercase(),
+                            style = GymTheme.type.captionRegular,
+                            color = GymTheme.colors.textSecondary,
+                        )
+                        Text(
+                            text = "${uiState.session.currentSet} / ${uiState.session.totalSets}",
+                            style = GymTheme.type.numericMetric,
+                            color = GymTheme.colors.textPrimary,
+                        )
+                    }
                 }
             }
 

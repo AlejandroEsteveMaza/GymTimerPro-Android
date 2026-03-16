@@ -138,6 +138,7 @@ class RoutinesViewModel(
             current.copy(
                 name = value.take(50),
                 nameCount = value.take(50).length,
+                nameTouched = true,
             )
         }
     }
@@ -273,7 +274,10 @@ class RoutinesViewModel(
 
     fun onSaveEditor() {
         val draft = editorState.value ?: return
-        if (!canSaveDraft(draft, uiState.value.settings)) return
+        if (!canSaveDraft(draft, uiState.value.settings)) {
+            requestNameValidation()
+            return
+        }
 
         viewModelScope.launch {
             persistEditorDraft(draft)
@@ -305,7 +309,10 @@ class RoutinesViewModel(
                 return@launch
             }
 
-            if (!canSaveDraft(draft, uiState.value.settings)) return@launch
+            if (!canSaveDraft(draft, uiState.value.settings)) {
+                requestNameValidation()
+                return@launch
+            }
             val routineIdToApply = if (draft.hasUnsavedChanges) {
                 persistEditorDraft(draft)
             } else {
@@ -344,6 +351,12 @@ class RoutinesViewModel(
 
     private fun updateEditorImmediately(transform: (RoutineEditorState) -> RoutineEditorState) {
         editorState.update { current -> current?.let(transform) }
+    }
+
+    private fun requestNameValidation() {
+        updateEditorImmediately { current ->
+            current.copy(nameValidationRequested = true)
+        }
     }
 
     private fun canSaveDraft(

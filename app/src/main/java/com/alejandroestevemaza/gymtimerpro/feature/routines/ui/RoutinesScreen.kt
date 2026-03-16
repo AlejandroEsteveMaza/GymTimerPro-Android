@@ -565,6 +565,37 @@ private fun ClassificationManagerDialog(
     onSaveDraft: () -> Unit,
     onDelete: (String) -> Unit,
 ) {
+    var pendingDeleteClassificationId by remember { mutableStateOf<String?>(null) }
+    val pendingDeleteClassification = uiState.classifications.firstOrNull { classification ->
+        classification.id == pendingDeleteClassificationId
+    }
+    if (pendingDeleteClassification != null) {
+        AlertDialog(
+            onDismissRequest = { pendingDeleteClassificationId = null },
+            title = {
+                Text(text = stringResource(R.string.classifications_delete))
+            },
+            text = {
+                Text(text = pendingDeleteClassification.name)
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        onDelete(pendingDeleteClassification.id)
+                        pendingDeleteClassificationId = null
+                    },
+                ) {
+                    Text(text = stringResource(R.string.routines_delete_confirm_action))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { pendingDeleteClassificationId = null }) {
+                    Text(text = stringResource(R.string.routines_cancel))
+                }
+            },
+        )
+    }
+
     Dialog(
         onDismissRequest = onClose,
         properties = DialogProperties(usePlatformDefaultWidth = false),
@@ -677,6 +708,19 @@ private fun ClassificationManagerDialog(
                                 ),
                                 singleLine = true,
                             )
+                            AnimatedVisibility(visible = uiState.classificationSearchQuery.isNotBlank()) {
+                                IconButton(
+                                    onClick = { onSearchChanged("") },
+                                    modifier = Modifier.size(40.dp),
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Rounded.Close,
+                                        contentDescription = stringResource(R.string.routines_cancel),
+                                        tint = GymTheme.colors.textSecondary,
+                                        modifier = Modifier.size(18.dp),
+                                    )
+                                }
+                            }
                             AnimatedVisibility(visible = uiState.classificationDraft == null) {
                                 IconButton(onClick = onStartCreate) {
                                     Box(
@@ -850,7 +894,9 @@ private fun ClassificationManagerDialog(
                                                         )
                                                     }
                                                     IconButton(
-                                                        onClick = { onDelete(classification.id) },
+                                                        onClick = {
+                                                            pendingDeleteClassificationId = classification.id
+                                                        },
                                                         modifier = Modifier.size(40.dp),
                                                     ) {
                                                         Icon(
@@ -1244,10 +1290,10 @@ private fun RoutineEditorContent(
                 supportingText = {
                     Text(text = stringResource(R.string.routines_name_counter, editorState.nameCount))
                 },
-                isError = editorState.name.trim().isEmpty(),
+                isError = editorState.shouldShowNameError,
                 singleLine = true,
             )
-            if (editorState.name.trim().isEmpty()) {
+            if (editorState.shouldShowNameError) {
                 Text(
                     text = stringResource(R.string.routines_invalid_name),
                     style = GymTheme.type.footnoteRegular,
@@ -1505,6 +1551,19 @@ private fun RoutineClassificationPickerDialog(
                                 ),
                                 singleLine = true,
                             )
+                            AnimatedVisibility(visible = searchQuery.isNotBlank()) {
+                                IconButton(
+                                    onClick = { onSearchQueryChanged("") },
+                                    modifier = Modifier.size(40.dp),
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Rounded.Close,
+                                        contentDescription = stringResource(R.string.routines_cancel),
+                                        tint = GymTheme.colors.textSecondary,
+                                        modifier = Modifier.size(18.dp),
+                                    )
+                                }
+                            }
                         }
 
                         val filteredClassifications = uiState.classifications.filter { classification ->

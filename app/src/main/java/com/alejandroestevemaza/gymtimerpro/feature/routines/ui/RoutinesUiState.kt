@@ -33,9 +33,14 @@ data class RoutineEditorState(
     val isAppliedToTraining: Boolean = false,
     val hasUnsavedChanges: Boolean = false,
     val isWeightValid: Boolean = true,
+    val nameTouched: Boolean = false,
+    val nameValidationRequested: Boolean = false,
 ) {
     val isEditMode: Boolean
         get() = routineId != null
+
+    val shouldShowNameError: Boolean
+        get() = name.trim().isEmpty() && (nameTouched || nameValidationRequested)
 }
 
 data class RoutinesUiState(

@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -81,6 +82,15 @@ fun ClassificationInputBar(
                     disabledIndicatorColor = androidx.compose.ui.graphics.Color.Transparent,
                 ),
             )
+            if (text.isNotBlank()) {
+                IconButton(onClick = { onTextChange("") }, enabled = enabled) {
+                    Icon(
+                        imageVector = Icons.Rounded.Close,
+                        contentDescription = null,
+                        tint = GymTheme.colors.textSecondary,
+                    )
+                }
+            }
             IconButton(onClick = onCreate, enabled = enabled && canCreate) {
                 Icon(
                     imageVector = Icons.Rounded.Add,
