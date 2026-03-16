@@ -169,9 +169,13 @@ fun PaywallPresentationContext.copySpec(): PaywallCopySpec = when (infoLevel) {
 }
 
 object PaywallPlanDefaults {
+    // ID real del producto en Google Play Console
+    const val subscriptionProductId = "premium"
+    // IDs virtuales internos para distinguir los planes en la UI
     const val yearlyProductId = "premium_yearly"
     const val monthlyProductId = "premium_monthly"
-    val proProductIds: List<String> = listOf(yearlyProductId, monthlyProductId)
+    // Lista de IDs reales para reconciliar compras
+    val proProductIds: List<String> = listOf(subscriptionProductId)
 
     fun defaultProductId(availableIds: List<String>): String? {
         if (availableIds.contains(yearlyProductId)) {

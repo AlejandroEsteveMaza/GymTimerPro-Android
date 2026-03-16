@@ -237,21 +237,26 @@ class BillingPremiumStateRepository(
         if (mutableProductsById.value.isNotEmpty()) return
         if (!ensureConnection()) return
 
-        val products = queryProductDetails()
+        val allProductDetails = queryProductDetails()
         productDetailsById.clear()
-        productDetailsById.putAll(products.associateBy { productDetails -> productDetails.productId })
-        mutableProductsById.value = products
-            .mapNotNull(::toPremiumProduct)
-            .associateBy(PremiumProduct::id)
+        val premiumProducts = mutableListOf<PremiumProduct>()
+        for (productDetails in allProductDetails) {
+            val products = expandProductDetails(productDetails)
+            for (product in products) {
+                productDetailsById[product.id] = productDetails
+                premiumProducts.add(product)
+            }
+        }
+        mutableProductsById.value = premiumProducts.associateBy(PremiumProduct::id)
     }
 
     private suspend fun queryProductDetails(): List<ProductDetails> = suspendCancellableCoroutine { continuation ->
-        val productList = PaywallPlanDefaults.proProductIds.map { productId ->
+        val productList = listOf(
             QueryProductDetailsParams.Product.newBuilder()
-                .setProductId(productId)
+                .setProductId(PaywallPlanDefaults.subscriptionProductId)
                 .setProductType(BillingClient.ProductType.SUBS)
                 .build()
-        }
+        )
         val params = QueryProductDetailsParams.newBuilder()
             .setProductList(productList)
             .build()
@@ -269,44 +274,57 @@ class BillingPremiumStateRepository(
         }
     }
 
-    private fun toPremiumProduct(productDetails: ProductDetails): PremiumProduct? {
-        val selectedOffer = selectOffer(productDetails) ?: return null
-        val recurringPhase = selectedOffer.pricingPhases.pricingPhaseList
-            .lastOrNull { pricingPhase -> pricingPhase.priceAmountMicros > 0L }
-            ?: selectedOffer.pricingPhases.pricingPhaseList.lastOrNull()
+    // Un producto de Play Console puede tener varios base plans (mensual, anual…).
+    // Esta función los expande en un PremiumProduct por cada periodo de facturación distinto,
+    // eligiendo la oferta con prueba gratis si existe.
+    private fun expandProductDetails(productDetails: ProductDetails): List<PremiumProduct> {
+        val offers = productDetails.subscriptionOfferDetails.orEmpty()
+        val offersByPeriod = offers.groupBy { offer ->
+            offer.pricingPhases.pricingPhaseList
+                .lastOrNull { phase -> phase.priceAmountMicros > 0L }
+                ?.billingPeriod
+                ?: offer.pricingPhases.pricingPhaseList.lastOrNull()?.billingPeriod
+        }
+        return offersByPeriod.mapNotNull { (_, periodOffers) ->
+            val selectedOffer = periodOffers.firstOrNull { offer ->
+                offer.pricingPhases.pricingPhaseList.any { phase -> phase.priceAmountMicros == 0L }
+            } ?: periodOffers.firstOrNull() ?: return@mapNotNull null
+            toPremiumProductFromOffer(productDetails, selectedOffer)
+        }
+    }
+
+    private fun toPremiumProductFromOffer(
+        productDetails: ProductDetails,
+        offer: ProductDetails.SubscriptionOfferDetails,
+    ): PremiumProduct? {
+        val recurringPhase = offer.pricingPhases.pricingPhaseList
+            .lastOrNull { phase -> phase.priceAmountMicros > 0L }
+            ?: offer.pricingPhases.pricingPhaseList.lastOrNull()
             ?: return null
-        val freeTrialPhase = selectedOffer.pricingPhases.pricingPhaseList
-            .firstOrNull { pricingPhase -> pricingPhase.priceAmountMicros == 0L }
+        val freeTrialPhase = offer.pricingPhases.pricingPhaseList
+            .firstOrNull { phase -> phase.priceAmountMicros == 0L }
+
+        val planKind = inferPlanKind(recurringPhase.billingPeriod)
+        val virtualId = when (planKind) {
+            PremiumPlanKind.Yearly -> PaywallPlanDefaults.yearlyProductId
+            PremiumPlanKind.Monthly -> PaywallPlanDefaults.monthlyProductId
+            else -> return null
+        }
 
         return PremiumProduct(
-            id = productDetails.productId,
+            id = virtualId,
             title = productDetails.title,
             formattedPrice = recurringPhase.formattedPrice,
-            offerToken = selectedOffer.offerToken,
-            planKind = inferPlanKind(
-                productId = productDetails.productId,
-                recurringPeriod = recurringPhase.billingPeriod,
-            ),
+            offerToken = offer.offerToken,
+            planKind = planKind,
             recurringPeriod = recurringPhase.billingPeriod.toBillingPeriod(),
             freeTrialPeriod = freeTrialPhase?.billingPeriod?.toBillingPeriod(),
         )
     }
 
-    private fun selectOffer(productDetails: ProductDetails): ProductDetails.SubscriptionOfferDetails? {
-        val offerDetails = productDetails.subscriptionOfferDetails.orEmpty()
-        return offerDetails.firstOrNull { offer ->
-            offer.pricingPhases.pricingPhaseList.any { pricingPhase -> pricingPhase.priceAmountMicros == 0L }
-        } ?: offerDetails.firstOrNull()
-    }
-
-    private fun inferPlanKind(
-        productId: String,
-        recurringPeriod: String,
-    ): PremiumPlanKind = when {
-        productId == PaywallPlanDefaults.yearlyProductId -> PremiumPlanKind.Yearly
-        productId == PaywallPlanDefaults.monthlyProductId -> PremiumPlanKind.Monthly
-        recurringPeriod == "P1Y" -> PremiumPlanKind.Yearly
-        recurringPeriod == "P1M" -> PremiumPlanKind.Monthly
+    private fun inferPlanKind(billingPeriod: String): PremiumPlanKind = when {
+        billingPeriod.contains("Y") -> PremiumPlanKind.Yearly
+        billingPeriod.contains("M") -> PremiumPlanKind.Monthly
         else -> PremiumPlanKind.Other
     }
 

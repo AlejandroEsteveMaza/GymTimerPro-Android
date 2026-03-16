@@ -2,6 +2,7 @@ package com.alejandroestevemaza.gymtimerpro.data.preferences
 
 import android.content.Context
 import androidx.room.Room
+import com.alejandroestevemaza.gymtimerpro.BuildConfig
 import com.alejandroestevemaza.gymtimerpro.data.local.AppDatabase
 import com.alejandroestevemaza.gymtimerpro.data.repository.DefaultRoutinesRepository
 import com.alejandroestevemaza.gymtimerpro.data.repository.DefaultTrainingSessionCoordinator
@@ -28,7 +29,11 @@ class AppContainer(context: Context) {
     }
 
     val premiumStateRepository: PremiumStateRepository by lazy {
-        BillingPremiumStateRepository(appContext)
+        if (BuildConfig.DEBUG) {
+            DebugPremiumStateRepository()
+        } else {
+            BillingPremiumStateRepository(appContext)
+        }
     }
 
     val trainingSessionRepository: TrainingSessionRepository by lazy {
