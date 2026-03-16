@@ -109,6 +109,7 @@
     <string name="routines_classifications_label">Classifications</string>
     <string name="routines_save">Save</string>
     <string name="routines_cancel">Cancel</string>
+    <string name="routines_done">Done</string>
     <string name="routines_delete">Delete routine</string>
     <string name="routines_remove_from_training">Remove from training</string>
     <string name="routines_apply_to_training">Apply to training</string>

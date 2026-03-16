@@ -9,6 +9,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -17,6 +18,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.size
@@ -147,10 +149,8 @@ fun TrainingRoute(
         showRoutinePicker = showRoutinePicker,
         pickerSearchQuery = pickerSearchQuery,
         pickerExpandedSectionId = pickerExpandedSectionId,
-        onIncreaseTotalSets = trainingViewModel::onIncreaseTotalSets,
-        onDecreaseTotalSets = trainingViewModel::onDecreaseTotalSets,
-        onIncreaseRestSeconds = trainingViewModel::onIncreaseRestSeconds,
-        onDecreaseRestSeconds = trainingViewModel::onDecreaseRestSeconds,
+        onTotalSetsChanged = trainingViewModel::onTotalSetsChanged,
+        onRestSecondsChanged = trainingViewModel::onRestSecondsChanged,
         onStartRest = {
             trainingViewModel.onStartRest()
             requestNotificationPermissionIfNeeded()
@@ -194,10 +194,8 @@ fun TrainingScreen(
     showRoutinePicker: Boolean,
     pickerSearchQuery: String,
     pickerExpandedSectionId: String?,
-    onIncreaseTotalSets: () -> Unit,
-    onDecreaseTotalSets: () -> Unit,
-    onIncreaseRestSeconds: () -> Unit,
-    onDecreaseRestSeconds: () -> Unit,
+    onTotalSetsChanged: (Int) -> Unit,
+    onRestSecondsChanged: (Int) -> Unit,
     onStartRest: () -> Unit,
     onResetWorkout: () -> Unit,
     onDismissDailyLimitDialog: () -> Unit,
@@ -253,7 +251,6 @@ fun TrainingScreen(
                 onClick = onStartRest,
                 state = if (uiState.startRestEnabled) GymComponentState.Normal else GymComponentState.Disabled,
                 modifier = Modifier
-                    .navigationBarsPadding()
                     .padding(horizontal = GymTheme.spacing.s20, vertical = GymTheme.spacing.s12),
             )
         },
@@ -261,8 +258,7 @@ fun TrainingScreen(
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding)
-                .statusBarsPadding(),
+                .padding(innerPadding),
             contentPadding = PaddingValues(
                 start = GymTheme.spacing.s20,
                 end = GymTheme.spacing.s20,
@@ -275,10 +271,8 @@ fun TrainingScreen(
                 TrainingConfigurationCard(
                     uiState = uiState,
                     onOpenRoutinePicker = onOpenRoutinePicker,
-                    onIncreaseTotalSets = onIncreaseTotalSets,
-                    onDecreaseTotalSets = onDecreaseTotalSets,
-                    onIncreaseRestSeconds = onIncreaseRestSeconds,
-                    onDecreaseRestSeconds = onDecreaseRestSeconds,
+                    onTotalSetsChanged = onTotalSetsChanged,
+                    onRestSecondsChanged = onRestSecondsChanged,
                     onUpgradeToPro = {
                         onRequestPaywall(
                             PaywallPresentationRequest(
@@ -307,10 +301,8 @@ fun TrainingScreen(
 private fun TrainingConfigurationCard(
     uiState: TrainingUiState,
     onOpenRoutinePicker: () -> Unit,
-    onIncreaseTotalSets: () -> Unit,
-    onDecreaseTotalSets: () -> Unit,
-    onIncreaseRestSeconds: () -> Unit,
-    onDecreaseRestSeconds: () -> Unit,
+    onTotalSetsChanged: (Int) -> Unit,
+    onRestSecondsChanged: (Int) -> Unit,
     onUpgradeToPro: () -> Unit,
 ) {
     SectionCard(
@@ -338,52 +330,58 @@ private fun TrainingConfigurationCard(
             ProStatusChip(isPro = uiState.isPro)
         },
     ) {
-        RoutineSummaryRow(
-            uiState = uiState,
-            onOpenRoutinePicker = onOpenRoutinePicker,
-        )
-        HorizontalDivider(color = GymTheme.colors.divider)
-
-        NumericConfigRow(
-            icon = Icons.Rounded.Layers,
-            title = stringResource(R.string.training_sets_label),
-            valueText = uiState.session.totalSets.toString(),
-            onDecrease = onDecreaseTotalSets,
-            onIncrease = onIncreaseTotalSets,
-            state = if (uiState.canEditConfiguration) GymComponentState.Normal else GymComponentState.Disabled,
-        )
-        HorizontalDivider(color = GymTheme.colors.divider)
-
-        NumericConfigRow(
-            icon = Icons.Rounded.Timer,
-            title = stringResource(R.string.training_rest_label),
-            valueText = formatDuration(
-                totalSeconds = uiState.session.restSeconds,
-                displayFormat = uiState.settings.timerDisplayFormat,
-            ),
-            onDecrease = onDecreaseRestSeconds,
-            onIncrease = onIncreaseRestSeconds,
-            state = if (uiState.canEditConfiguration) GymComponentState.Normal else GymComponentState.Disabled,
-        )
-        if (!uiState.isPro) {
+        Column {
+            RoutineSummaryRow(
+                uiState = uiState,
+                onOpenRoutinePicker = onOpenRoutinePicker,
+            )
             HorizontalDivider(color = GymTheme.colors.divider)
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    text = stringResource(
-                        R.string.pro_usage_today_format,
-                        uiState.dailyUsage.consumedCount,
-                        com.alejandroestevemaza.gymtimerpro.core.model.TrainingDefaults.dailyFreeUsageLimit,
-                    ),
-                    style = GymTheme.type.footnoteRegular,
-                    color = GymTheme.colors.textSecondary,
-                    modifier = Modifier.weight(1f),
-                )
-                TextButton(onClick = onUpgradeToPro) {
-                    Text(text = stringResource(R.string.pro_button_upgrade))
+
+            NumericConfigRow(
+                icon = Icons.Rounded.Layers,
+                title = stringResource(R.string.training_sets_label),
+                valueText = uiState.session.totalSets.toString(),
+                value = uiState.session.totalSets,
+                valueRange = 1..uiState.settings.maxSetsPreference.maxSets,
+                valueStep = 1,
+                onValueChange = onTotalSetsChanged,
+                state = if (uiState.canEditConfiguration) GymComponentState.Normal else GymComponentState.Disabled,
+            )
+            HorizontalDivider(color = GymTheme.colors.divider)
+
+            NumericConfigRow(
+                icon = Icons.Rounded.Timer,
+                title = stringResource(R.string.training_rest_label),
+                valueText = formatDuration(
+                    totalSeconds = uiState.session.restSeconds,
+                    displayFormat = uiState.settings.timerDisplayFormat,
+                ),
+                value = uiState.session.restSeconds,
+                valueRange = 15..300,
+                valueStep = uiState.settings.restIncrementPreference.seconds,
+                onValueChange = onRestSecondsChanged,
+                state = if (uiState.canEditConfiguration) GymComponentState.Normal else GymComponentState.Disabled,
+            )
+            if (!uiState.isPro) {
+                HorizontalDivider(color = GymTheme.colors.divider)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        text = stringResource(
+                            R.string.pro_usage_today_format,
+                            uiState.dailyUsage.consumedCount,
+                            com.alejandroestevemaza.gymtimerpro.core.model.TrainingDefaults.dailyFreeUsageLimit,
+                        ),
+                        style = GymTheme.type.footnoteRegular,
+                        color = GymTheme.colors.textSecondary,
+                        modifier = Modifier.weight(1f),
+                    )
+                    TextButton(onClick = onUpgradeToPro) {
+                        Text(text = stringResource(R.string.pro_button_upgrade))
+                    }
                 }
             }
         }
@@ -398,6 +396,7 @@ private fun RoutineSummaryRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .heightIn(min = GymTheme.layout.minTapHeight)
             .clickable(onClick = onOpenRoutinePicker)
             .padding(vertical = GymTheme.spacing.s2),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -407,17 +406,22 @@ private fun RoutineSummaryRow(
             horizontalArrangement = Arrangement.spacedBy(GymTheme.spacing.s8),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Icon(
-                imageVector = Icons.Rounded.FitnessCenter,
-                contentDescription = null,
-                tint = GymTheme.colors.iconTint,
+            Box(
                 modifier = Modifier
+                    .size(GymTheme.layout.configIconFrame)
                     .background(
                         color = GymTheme.colors.iconBackground,
                         shape = androidx.compose.foundation.shape.RoundedCornerShape(GymTheme.radii.r8),
-                    )
-                    .padding(GymTheme.spacing.s6),
-            )
+                    ),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    imageVector = Icons.Rounded.FitnessCenter,
+                    contentDescription = null,
+                    tint = GymTheme.colors.iconTint,
+                    modifier = Modifier.size(GymTheme.layout.configIconGlyph),
+                )
+            }
             Text(
                 text = stringResource(R.string.training_routine_label),
                 style = GymTheme.type.valueLabel,
@@ -624,96 +628,98 @@ private fun TrainingProgressCard(
             }
         },
     ) {
-        Surface(
-            modifier = Modifier.fillMaxWidth(),
-            shape = androidx.compose.foundation.shape.RoundedCornerShape(GymTheme.radii.r16),
-            color = GymTheme.colors.metricBackground,
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(GymTheme.spacing.s12),
-                verticalArrangement = Arrangement.spacedBy(GymTheme.spacing.s6),
-            ) {
-                Text(
-                    text = stringResource(R.string.training_sets_label).uppercase(),
-                    style = GymTheme.type.captionRegular,
-                    color = GymTheme.colors.textSecondary,
-                )
-                Text(
-                    text = "${uiState.session.currentSet} / ${uiState.session.totalSets}",
-                    style = GymTheme.type.numericMetric,
-                    color = GymTheme.colors.textPrimary,
-                )
-            }
-        }
-
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(GymTheme.spacing.s10),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                text = stringResource(R.string.training_state_label),
-                style = GymTheme.type.subheadlineSemibold,
-                color = GymTheme.colors.textSecondary,
-            )
-            Row(
-                modifier = Modifier
-                    .background(
-                        color = stateColor.copy(alpha = 0.14f),
-                        shape = androidx.compose.foundation.shape.RoundedCornerShape(GymTheme.radii.capsule),
-                    )
-                    .padding(horizontal = GymTheme.spacing.s10, vertical = GymTheme.spacing.s4),
-                horizontalArrangement = Arrangement.spacedBy(GymTheme.spacing.s6),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Icon(
-                    imageVector = if (uiState.session.timerIsRunning) Icons.Rounded.Timer else Icons.Rounded.Check,
-                    contentDescription = null,
-                    tint = stateColor,
-                    modifier = Modifier.size(GymTheme.spacing.s14),
-                )
-                Text(
-                    text = stateLabel,
-                    style = GymTheme.type.captionSemibold,
-                    color = stateColor,
-                )
-            }
-        }
-
-        if (uiState.session.timerIsRunning) {
+        Column(verticalArrangement = Arrangement.spacedBy(GymTheme.spacing.s10)) {
             Surface(
                 modifier = Modifier.fillMaxWidth(),
                 shape = androidx.compose.foundation.shape.RoundedCornerShape(GymTheme.radii.r16),
-                color = GymTheme.colors.timerBackground,
+                color = GymTheme.colors.trainingMetricBackground,
             ) {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = GymTheme.spacing.s16, vertical = GymTheme.spacing.s12),
+                        .padding(GymTheme.spacing.s12),
                     verticalArrangement = Arrangement.spacedBy(GymTheme.spacing.s6),
                 ) {
                     Text(
-                        text = stringResource(R.string.training_rest_label).uppercase(),
+                        text = stringResource(R.string.training_sets_label).uppercase(),
                         style = GymTheme.type.captionRegular,
                         color = GymTheme.colors.textSecondary,
                     )
                     Text(
-                        text = formatDuration(
-                            totalSeconds = uiState.session.timerRemainingSeconds,
-                            displayFormat = uiState.settings.timerDisplayFormat,
-                        ),
-                        style = GymTheme.type.numericTimer,
-                        color = GymTheme.colors.resting,
+                        text = "${uiState.session.currentSet} / ${uiState.session.totalSets}",
+                        style = GymTheme.type.numericMetric,
+                        color = GymTheme.colors.textPrimary,
                     )
                 }
             }
-        } else if (uiState.session.timerDidFinish) {
-            Text(
-                text = stringResource(R.string.training_timer_finished),
-                style = GymTheme.type.subheadlineSemibold,
-                color = GymTheme.colors.textPrimary,
-            )
+
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(GymTheme.spacing.s10),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = stringResource(R.string.training_state_label),
+                    style = GymTheme.type.subheadlineSemibold,
+                    color = GymTheme.colors.textSecondary,
+                )
+                Row(
+                    modifier = Modifier
+                        .background(
+                            color = stateColor.copy(alpha = 0.14f),
+                            shape = androidx.compose.foundation.shape.RoundedCornerShape(GymTheme.radii.capsule),
+                        )
+                        .padding(horizontal = GymTheme.spacing.s10, vertical = GymTheme.spacing.s4),
+                    horizontalArrangement = Arrangement.spacedBy(GymTheme.spacing.s6),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(
+                        imageVector = if (uiState.session.timerIsRunning) Icons.Rounded.Timer else Icons.Rounded.Check,
+                        contentDescription = null,
+                        tint = stateColor,
+                        modifier = Modifier.size(GymTheme.spacing.s14),
+                    )
+                    Text(
+                        text = stateLabel,
+                        style = GymTheme.type.captionSemibold,
+                        color = stateColor,
+                    )
+                }
+            }
+
+            if (uiState.session.timerIsRunning) {
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(GymTheme.radii.r16),
+                    color = GymTheme.colors.timerBackground,
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = GymTheme.spacing.s16, vertical = GymTheme.spacing.s12),
+                        verticalArrangement = Arrangement.spacedBy(GymTheme.spacing.s6),
+                    ) {
+                        Text(
+                            text = stringResource(R.string.training_rest_label).uppercase(),
+                            style = GymTheme.type.captionRegular,
+                            color = GymTheme.colors.textSecondary,
+                        )
+                        Text(
+                            text = formatDuration(
+                                totalSeconds = uiState.session.timerRemainingSeconds,
+                                displayFormat = uiState.settings.timerDisplayFormat,
+                            ),
+                            style = GymTheme.type.numericTimer,
+                            color = GymTheme.colors.resting,
+                        )
+                    }
+                }
+            } else if (uiState.session.timerDidFinish) {
+                Text(
+                    text = stringResource(R.string.training_timer_finished),
+                    style = GymTheme.type.subheadlineSemibold,
+                    color = GymTheme.colors.textPrimary,
+                )
+            }
         }
     }
 }

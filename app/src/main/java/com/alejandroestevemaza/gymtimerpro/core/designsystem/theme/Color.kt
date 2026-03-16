@@ -28,6 +28,8 @@ private val LightSecondaryButtonBorder = Color(0xFFC7C7CC)
 private val DarkSecondaryButtonBorder = Color(0xFF48484A)
 private val LightMetricBackground = Color(0xFFFFFFFF)
 private val DarkMetricBackground = Color(0xFF2C2C2E)
+private val LightTrainingMetricBackground = Color(0xFFF7F7FA)
+private val DarkTrainingMetricBackground = Color(0xFF3A3A3C)
 private val LightPrimaryDisabled = Color(0xFFD1D1D6)
 private val DarkPrimaryDisabled = Color(0xFF3A3A3C)
 private val LightCardBorder = Color(0x4C3C3C43)
@@ -120,6 +122,7 @@ data class GymColors(
     val secondaryButtonFill: Color,
     val secondaryButtonBorder: Color,
     val metricBackground: Color,
+    val trainingMetricBackground: Color,
     val timerBackground: Color,
     val cardBorder: Color,
     val cardShadow: Color,
@@ -155,6 +158,7 @@ internal val GymLightColors = GymColors(
     secondaryButtonFill = LightSecondaryButtonFill,
     secondaryButtonBorder = LightSecondaryButtonBorder,
     metricBackground = LightMetricBackground,
+    trainingMetricBackground = LightTrainingMetricBackground,
     timerBackground = TimerBackgroundLight,
     cardBorder = LightCardBorder,
     cardShadow = CardShadow,
@@ -190,6 +194,7 @@ internal val GymDarkColors = GymColors(
     secondaryButtonFill = DarkSecondaryButtonFill,
     secondaryButtonBorder = DarkSecondaryButtonBorder,
     metricBackground = DarkMetricBackground,
+    trainingMetricBackground = DarkTrainingMetricBackground,
     timerBackground = TimerBackgroundDark,
     cardBorder = DarkCardBorder,
     cardShadow = CardShadow,

@@ -1,5 +1,6 @@
 package com.alejandroestevemaza.gymtimerpro.feature.routines.ui
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -16,11 +17,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -36,10 +40,12 @@ import androidx.compose.material.icons.rounded.ExpandMore
 import androidx.compose.material.icons.rounded.MoreHoriz
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.Remove
+import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
-import androidx.compose.material3.ElevatedFilterChip
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -47,22 +53,31 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
+import androidx.compose.ui.window.DialogWindowProvider
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.alejandroestevemaza.gymtimerpro.R
-import com.alejandroestevemaza.gymtimerpro.core.designsystem.component.ClassificationInputBar
 import com.alejandroestevemaza.gymtimerpro.core.designsystem.component.HorizontalWheelStepper
 import com.alejandroestevemaza.gymtimerpro.core.designsystem.component.RoutineRowItem
 import com.alejandroestevemaza.gymtimerpro.core.designsystem.theme.GymTheme
@@ -272,7 +287,9 @@ fun RoutinesScreen(
                     item {
                         ClassificationSectionsCard(
                             sections = classificationSections,
+                            uiState = uiState,
                             onToggleSection = onToggleSection,
+                            onEditRoutine = onEditRoutine,
                         )
                     }
                 }
@@ -301,7 +318,9 @@ fun RoutinesScreen(
 @Composable
 private fun ClassificationSectionsCard(
     sections: List<RoutineCatalogSection>,
+    uiState: RoutinesUiState,
     onToggleSection: (String) -> Unit,
+    onEditRoutine: (String) -> Unit,
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -312,6 +331,7 @@ private fun ClassificationSectionsCard(
             verticalArrangement = Arrangement.spacedBy(GymTheme.spacing.s6),
         ) {
             sections.forEachIndexed { index, section ->
+                // Header de la sección (clickable para expandir/colapsar)
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -335,6 +355,38 @@ private fun ClassificationSectionsCard(
                         tint = GymTheme.colors.textSecondary,
                     )
                 }
+
+                // Rutinas de la sección (visibles solo cuando está expandida)
+                if (section.isExpanded) {
+                    if (section.routines.isEmpty()) {
+                        Text(
+                            text = stringResource(R.string.routines_empty_body),
+                            style = GymTheme.type.subheadlineRegular,
+                            color = GymTheme.colors.textSecondary,
+                            modifier = Modifier.padding(
+                                start = GymTheme.spacing.s8,
+                                bottom = GymTheme.spacing.s8,
+                            ),
+                        )
+                    } else {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(bottom = GymTheme.spacing.s8),
+                            verticalArrangement = Arrangement.spacedBy(GymTheme.spacing.s4),
+                        ) {
+                            section.routines.forEachIndexed { routineIndex, routine ->
+                                HorizontalDivider(color = GymTheme.colors.divider)
+                                RoutineListRow(
+                                    routine = routine,
+                                    uiState = uiState,
+                                    onEditRoutine = onEditRoutine,
+                                )
+                            }
+                        }
+                    }
+                }
+
                 if (index != sections.lastIndex) {
                     HorizontalDivider(color = GymTheme.colors.divider)
                 }
@@ -513,128 +565,317 @@ private fun ClassificationManagerDialog(
     onSaveDraft: () -> Unit,
     onDelete: (String) -> Unit,
 ) {
-    Dialog(onDismissRequest = onClose) {
-        Card {
-            Column(
+    Dialog(
+        onDismissRequest = onClose,
+        properties = DialogProperties(usePlatformDefaultWidth = false),
+    ) {
+        val view = LocalView.current
+        if (!view.isInEditMode) {
+            SideEffect {
+                (view.parent as? DialogWindowProvider)?.window?.apply {
+                    setBackgroundDrawableResource(android.R.color.transparent)
+                    setLayout(
+                        android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                        android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                    )
+                }
+            }
+        }
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center,
+        ) {
+            Surface(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(GymTheme.spacing.s20),
-                verticalArrangement = Arrangement.spacedBy(GymTheme.spacing.s16),
+                    .padding(horizontal = GymTheme.spacing.s20),
+                shape = RoundedCornerShape(28.dp),
+                color = GymTheme.colors.cardBackground,
+                shadowElevation = 20.dp,
             ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(
-                        text = stringResource(R.string.classifications_title),
-                        style = GymTheme.type.title2Bold,
-                        color = GymTheme.colors.textPrimary,
-                    )
-                    IconButton(onClick = onClose) {
-                        Icon(imageVector = Icons.Rounded.Close, contentDescription = null)
-                    }
-                }
+                Column(modifier = Modifier.fillMaxWidth()) {
 
-                ClassificationInputBar(
-                    text = uiState.classificationSearchQuery,
-                    onTextChange = onSearchChanged,
-                    onCreate = onStartCreate,
-                    canCreate = uiState.classificationSearchQuery.isNotBlank(),
-                    showDuplicateError = uiState.classificationDraft?.duplicateError == true,
-                    duplicateMessage = stringResource(R.string.classifications_duplicate),
-                )
-
-                uiState.classificationDraft?.let { draft ->
-                    Column(verticalArrangement = Arrangement.spacedBy(GymTheme.spacing.s8)) {
-                        OutlinedTextField(
-                            value = draft.value,
-                            onValueChange = onDraftChanged,
-                            modifier = Modifier.fillMaxWidth(),
-                            label = {
-                                Text(
-                                    text = if (draft.isCreating) {
-                                        stringResource(R.string.classifications_new_name)
-                                    } else {
-                                        stringResource(R.string.classifications_rename)
-                                    }
-                                )
-                            },
-                            singleLine = true,
+                    // ── Header estilo Apple ──────────────────────────────
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(
+                                start = GymTheme.spacing.s16,
+                                end = GymTheme.spacing.s4,
+                                top = GymTheme.spacing.s16,
+                                bottom = GymTheme.spacing.s16,
+                            ),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(
+                            text = stringResource(R.string.classifications_title),
+                            style = GymTheme.type.subheadlineSemibold,
+                            color = GymTheme.colors.textPrimary,
                         )
-                        if (draft.duplicateError) {
+                        TextButton(
+                            onClick = onClose,
+                            modifier = Modifier.align(Alignment.CenterEnd),
+                        ) {
                             Text(
-                                text = stringResource(R.string.classifications_duplicate),
-                                style = GymTheme.type.footnoteRegular,
-                                color = GymTheme.colors.error,
+                                text = stringResource(R.string.routines_done),
+                                style = GymTheme.type.subheadlineSemibold,
+                                color = GymTheme.colors.iconTint,
                             )
                         }
-                        Row(horizontalArrangement = Arrangement.spacedBy(GymTheme.spacing.s8)) {
-                            TextButton(onClick = onCancelDraft) {
-                                Text(text = stringResource(R.string.routines_cancel))
-                            }
-                            OutlinedButton(onClick = onSaveDraft) {
-                                Text(
-                                    text = if (draft.isCreating) {
-                                        stringResource(R.string.classifications_create)
-                                    } else {
-                                        stringResource(R.string.routines_save)
-                                    }
+                    }
+
+                    HorizontalDivider(color = GymTheme.colors.divider)
+
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(GymTheme.spacing.s16),
+                        verticalArrangement = Arrangement.spacedBy(GymTheme.spacing.s12),
+                    ) {
+
+                        // ── Buscador estilo iOS pill ──────────────────────
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(
+                                    color = GymTheme.colors.secondaryButtonFill,
+                                    shape = RoundedCornerShape(10.dp),
                                 )
+                                .padding(
+                                    start = GymTheme.spacing.s10,
+                                    end = GymTheme.spacing.s4,
+                                    top = GymTheme.spacing.s4,
+                                    bottom = GymTheme.spacing.s4,
+                                ),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(GymTheme.spacing.s6),
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.Search,
+                                contentDescription = null,
+                                tint = GymTheme.colors.textSecondary,
+                                modifier = Modifier.size(GymTheme.spacing.s20),
+                            )
+                            TextField(
+                                value = uiState.classificationSearchQuery,
+                                onValueChange = onSearchChanged,
+                                modifier = Modifier.weight(1f),
+                                textStyle = GymTheme.type.subheadlineRegular,
+                                placeholder = {
+                                    Text(
+                                        text = stringResource(R.string.classifications_search_hint),
+                                        style = GymTheme.type.subheadlineRegular,
+                                        color = GymTheme.colors.textSecondary,
+                                    )
+                                },
+                                colors = TextFieldDefaults.colors(
+                                    focusedContainerColor = Color.Transparent,
+                                    unfocusedContainerColor = Color.Transparent,
+                                    focusedIndicatorColor = Color.Transparent,
+                                    unfocusedIndicatorColor = Color.Transparent,
+                                    disabledIndicatorColor = Color.Transparent,
+                                ),
+                                singleLine = true,
+                            )
+                            AnimatedVisibility(visible = uiState.classificationDraft == null) {
+                                IconButton(onClick = onStartCreate) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(28.dp)
+                                            .background(
+                                                color = GymTheme.colors.iconTint,
+                                                shape = CircleShape,
+                                            ),
+                                        contentAlignment = Alignment.Center,
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Rounded.Add,
+                                            contentDescription = null,
+                                            tint = Color.White,
+                                            modifier = Modifier.size(18.dp),
+                                        )
+                                    }
+                                }
                             }
                         }
-                    }
-                }
 
-                val filteredClassifications = uiState.classifications.filter { classification ->
-                    uiState.classificationSearchQuery.isBlank() || classification.name.contains(
-                        uiState.classificationSearchQuery,
-                        ignoreCase = true,
-                    )
-                }
-
-                if (filteredClassifications.isEmpty()) {
-                    Text(
-                        text = stringResource(R.string.classifications_empty),
-                        style = GymTheme.type.subheadlineRegular,
-                        color = GymTheme.colors.textSecondary,
-                    )
-                } else {
-                    LazyColumn(
-                        modifier = Modifier.height(GymTheme.layout.classificationListHeight),
-                        verticalArrangement = Arrangement.spacedBy(GymTheme.spacing.s8),
-                    ) {
-                        items(filteredClassifications, key = { classification -> classification.id }) { classification ->
-                            Card(modifier = Modifier.fillMaxWidth()) {
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(
-                                            horizontal = GymTheme.spacing.s16,
-                                            vertical = GymTheme.spacing.s12,
-                                        ),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.CenterVertically,
+                        // ── Sección de creación / renombrado ─────────────
+                        AnimatedVisibility(visible = uiState.classificationDraft != null) {
+                            uiState.classificationDraft?.let { draft ->
+                                Surface(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    shape = RoundedCornerShape(12.dp),
+                                    color = GymTheme.colors.secondaryButtonFill,
                                 ) {
-                                    Text(text = classification.name)
-                                    Row(horizontalArrangement = Arrangement.spacedBy(GymTheme.spacing.s4)) {
-                                        IconButton(onClick = { onStartRename(classification.id) }) {
-                                            Icon(
-                                                imageVector = Icons.Rounded.Edit,
-                                                contentDescription = null,
+                                    Column(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(
+                                                horizontal = GymTheme.spacing.s16,
+                                                vertical = GymTheme.spacing.s12,
+                                            ),
+                                        verticalArrangement = Arrangement.spacedBy(GymTheme.spacing.s8),
+                                    ) {
+                                        Text(
+                                            text = if (draft.isCreating) {
+                                                stringResource(R.string.classifications_new_name)
+                                            } else {
+                                                stringResource(R.string.classifications_rename)
+                                            },
+                                            style = GymTheme.type.captionSemibold,
+                                            color = GymTheme.colors.iconTint,
+                                        )
+                                        TextField(
+                                            value = draft.value,
+                                            onValueChange = onDraftChanged,
+                                            modifier = Modifier.fillMaxWidth(),
+                                            singleLine = true,
+                                            colors = TextFieldDefaults.colors(
+                                                focusedContainerColor = Color.Transparent,
+                                                unfocusedContainerColor = Color.Transparent,
+                                                focusedIndicatorColor = GymTheme.colors.iconTint,
+                                                unfocusedIndicatorColor = GymTheme.colors.divider,
+                                                disabledIndicatorColor = Color.Transparent,
+                                            ),
+                                            textStyle = GymTheme.type.subheadlineRegular,
+                                            placeholder = {
+                                                Text(
+                                                    text = stringResource(R.string.classifications_new_name),
+                                                    style = GymTheme.type.subheadlineRegular,
+                                                    color = GymTheme.colors.textSecondary,
+                                                )
+                                            },
+                                        )
+                                        if (draft.duplicateError) {
+                                            Text(
+                                                text = stringResource(R.string.classifications_duplicate),
+                                                style = GymTheme.type.captionRegular,
+                                                color = GymTheme.colors.error,
                                             )
                                         }
-                                        IconButton(onClick = { onDelete(classification.id) }) {
-                                            Icon(
-                                                imageVector = Icons.Rounded.Delete,
-                                                contentDescription = null,
-                                            )
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.End,
+                                            verticalAlignment = Alignment.CenterVertically,
+                                        ) {
+                                            TextButton(onClick = onCancelDraft) {
+                                                Text(
+                                                    text = stringResource(R.string.routines_cancel),
+                                                    style = GymTheme.type.subheadlineRegular,
+                                                    color = GymTheme.colors.textSecondary,
+                                                )
+                                            }
+                                            Spacer(modifier = Modifier.width(GymTheme.spacing.s8))
+                                            Button(
+                                                onClick = onSaveDraft,
+                                                enabled = draft.value.isNotBlank(),
+                                            ) {
+                                                Text(
+                                                    text = if (draft.isCreating) {
+                                                        stringResource(R.string.classifications_create)
+                                                    } else {
+                                                        stringResource(R.string.routines_save)
+                                                    },
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        // ── Lista agrupada estilo iOS ─────────────────────
+                        val filteredClassifications = uiState.classifications.filter { classification ->
+                            uiState.classificationSearchQuery.isBlank() || classification.name.contains(
+                                uiState.classificationSearchQuery,
+                                ignoreCase = true,
+                            )
+                        }
+
+                        if (filteredClassifications.isEmpty()) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = GymTheme.spacing.s20),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Text(
+                                    text = stringResource(R.string.classifications_empty),
+                                    style = GymTheme.type.subheadlineRegular,
+                                    color = GymTheme.colors.textSecondary,
+                                )
+                            }
+                        } else {
+                            Surface(
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(12.dp),
+                                color = GymTheme.colors.secondaryButtonFill,
+                            ) {
+                                LazyColumn(
+                                    modifier = Modifier.heightIn(max = GymTheme.layout.classificationListHeight),
+                                ) {
+                                    itemsIndexed(
+                                        filteredClassifications,
+                                        key = { _, classification -> classification.id },
+                                    ) { index, classification ->
+                                        Column {
+                                            Row(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .padding(
+                                                        start = GymTheme.spacing.s16,
+                                                        end = GymTheme.spacing.s4,
+                                                        top = GymTheme.spacing.s4,
+                                                        bottom = GymTheme.spacing.s4,
+                                                    ),
+                                                horizontalArrangement = Arrangement.SpaceBetween,
+                                                verticalAlignment = Alignment.CenterVertically,
+                                            ) {
+                                                Text(
+                                                    text = classification.name,
+                                                    style = GymTheme.type.subheadlineRegular,
+                                                    color = GymTheme.colors.textPrimary,
+                                                    modifier = Modifier.weight(1f),
+                                                )
+                                                Row {
+                                                    IconButton(
+                                                        onClick = { onStartRename(classification.id) },
+                                                        modifier = Modifier.size(40.dp),
+                                                    ) {
+                                                        Icon(
+                                                            imageVector = Icons.Rounded.Edit,
+                                                            contentDescription = null,
+                                                            tint = GymTheme.colors.iconTint,
+                                                            modifier = Modifier.size(18.dp),
+                                                        )
+                                                    }
+                                                    IconButton(
+                                                        onClick = { onDelete(classification.id) },
+                                                        modifier = Modifier.size(40.dp),
+                                                    ) {
+                                                        Icon(
+                                                            imageVector = Icons.Rounded.Delete,
+                                                            contentDescription = null,
+                                                            tint = GymTheme.colors.error,
+                                                            modifier = Modifier.size(18.dp),
+                                                        )
+                                                    }
+                                                }
+                                            }
+                                            if (index < filteredClassifications.lastIndex) {
+                                                HorizontalDivider(
+                                                    modifier = Modifier.padding(start = GymTheme.spacing.s16),
+                                                    color = GymTheme.colors.divider,
+                                                )
+                                            }
                                         }
                                     }
                                 }
                             }
                         }
                     }
+
+                    Spacer(modifier = Modifier.height(GymTheme.spacing.s8))
                 }
             }
         }
@@ -660,6 +901,20 @@ private fun RoutineEditorDialog(
     onApplyOrRemoveFromTraining: () -> Unit,
 ) {
     var showDeleteDialog by remember { mutableStateOf(false) }
+    var showClassificationPicker by remember { mutableStateOf(false) }
+    var classificationPickerQuery by remember { mutableStateOf("") }
+
+    if (showClassificationPicker) {
+        RoutineClassificationPickerDialog(
+            uiState = uiState,
+            selectedClassificationIds = editorState.selectedClassificationIds,
+            searchQuery = classificationPickerQuery,
+            onSearchQueryChanged = { classificationPickerQuery = it },
+            onToggleClassification = onToggleClassification,
+            onDismiss = { showClassificationPicker = false },
+        )
+    }
+
     if (showDeleteDialog) {
         AlertDialog(
             onDismissRequest = { showDeleteDialog = false },
@@ -683,8 +938,30 @@ private fun RoutineEditorDialog(
         )
     }
 
-    Dialog(onDismissRequest = onDismiss) {
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false),
+    ) {
+        val view = LocalView.current
+        if (!view.isInEditMode) {
+            SideEffect {
+                (view.parent as? DialogWindowProvider)?.window?.apply {
+                    setBackgroundDrawableResource(android.R.color.transparent)
+                    setLayout(
+                        android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                        android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                    )
+                }
+            }
+        }
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center,
+        ) {
         RoutineEditorContent(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = GymTheme.spacing.s16),
             editorState = editorState,
             uiState = uiState,
             onDismiss = onDismiss,
@@ -697,10 +974,12 @@ private fun RoutineEditorDialog(
             onDecreaseRest = onDecreaseRest,
             onWeightChanged = onWeightChanged,
             onToggleClassification = onToggleClassification,
+            onOpenClassificationPicker = { showClassificationPicker = true },
             onSave = onSave,
             onDeleteRoutine = { showDeleteDialog = true },
             onApplyOrRemoveFromTraining = onApplyOrRemoveFromTraining,
         )
+        } // Box
     }
 }
 
@@ -896,8 +1175,10 @@ private fun EditorPreviewParameterRow(
             )
             if (showWheel) {
                 HorizontalWheelStepper(
-                    onDecrement = {},
-                    onIncrement = {},
+                    value = 50,
+                    valueRange = 0..100,
+                    step = 10,
+                    onValueChange = {},
                     state = com.alejandroestevemaza.gymtimerpro.core.designsystem.component.GymComponentState.Disabled,
                 )
             }
@@ -907,6 +1188,7 @@ private fun EditorPreviewParameterRow(
 
 @Composable
 private fun RoutineEditorContent(
+    modifier: Modifier = Modifier,
     editorState: RoutineEditorState,
     uiState: RoutinesUiState,
     onDismiss: () -> Unit,
@@ -919,11 +1201,15 @@ private fun RoutineEditorContent(
     onDecreaseRest: () -> Unit,
     onWeightChanged: (String) -> Unit,
     onToggleClassification: (String) -> Unit,
+    onOpenClassificationPicker: () -> Unit,
     onSave: () -> Unit,
     onDeleteRoutine: () -> Unit,
     onApplyOrRemoveFromTraining: () -> Unit,
 ) {
-    Card {
+    Card(
+        modifier = modifier,
+        colors = CardDefaults.cardColors(containerColor = GymTheme.colors.cardBackground),
+    ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -1014,23 +1300,49 @@ private fun RoutineEditorContent(
                     style = GymTheme.type.headlineSemibold,
                     color = GymTheme.colors.textPrimary,
                 )
-                FlowRow(
-                    horizontalArrangement = Arrangement.spacedBy(GymTheme.spacing.s8),
-                    verticalArrangement = Arrangement.spacedBy(GymTheme.spacing.s8),
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable(onClick = onOpenClassificationPicker),
                 ) {
-                    uiState.classifications.forEach { classification ->
-                        ElevatedFilterChip(
-                            selected = classification.id in editorState.selectedClassificationIds,
-                            onClick = { onToggleClassification(classification.id) },
-                            label = { Text(text = classification.name) },
-                            leadingIcon = {
-                                if (classification.id in editorState.selectedClassificationIds) {
-                                    Icon(
-                                        imageVector = Icons.Rounded.Check,
-                                        contentDescription = null,
-                                    )
-                                }
-                            },
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = GymTheme.spacing.s16, vertical = GymTheme.spacing.s12),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Column(
+                            modifier = Modifier.weight(1f),
+                            verticalArrangement = Arrangement.spacedBy(GymTheme.spacing.s4),
+                        ) {
+                            Text(
+                                text = stringResource(R.string.routines_classifications_label),
+                                style = GymTheme.type.captionSemibold,
+                                color = GymTheme.colors.textSecondary,
+                            )
+                            val selectedNames = uiState.classifications
+                                .filter { it.id in editorState.selectedClassificationIds }
+                                .map { it.name }
+                            Text(
+                                text = selectedNames
+                                    .takeIf { it.isNotEmpty() }
+                                    ?.joinToString(separator = ", ")
+                                    ?: stringResource(R.string.progress_summary_none),
+                                style = GymTheme.type.subheadlineRegular,
+                                color = if (selectedNames.isEmpty()) {
+                                    GymTheme.colors.textSecondary
+                                } else {
+                                    GymTheme.colors.textPrimary
+                                },
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                        }
+                        Icon(
+                            imageVector = Icons.Rounded.ChevronRight,
+                            contentDescription = null,
+                            tint = GymTheme.colors.textSecondary,
                         )
                     }
                 }
@@ -1070,6 +1382,205 @@ private fun RoutineEditorContent(
                         Spacer(modifier = Modifier.size(GymTheme.spacing.s8))
                         Text(text = stringResource(R.string.routines_delete))
                     }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun RoutineClassificationPickerDialog(
+    uiState: RoutinesUiState,
+    selectedClassificationIds: Set<String>,
+    searchQuery: String,
+    onSearchQueryChanged: (String) -> Unit,
+    onToggleClassification: (String) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false),
+    ) {
+        val view = LocalView.current
+        if (!view.isInEditMode) {
+            SideEffect {
+                (view.parent as? DialogWindowProvider)?.window?.apply {
+                    setBackgroundDrawableResource(android.R.color.transparent)
+                    setLayout(
+                        android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                        android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                    )
+                }
+            }
+        }
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center,
+        ) {
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = GymTheme.spacing.s20),
+                shape = RoundedCornerShape(28.dp),
+                color = GymTheme.colors.cardBackground,
+                shadowElevation = 20.dp,
+            ) {
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(
+                                start = GymTheme.spacing.s16,
+                                end = GymTheme.spacing.s4,
+                                top = GymTheme.spacing.s16,
+                                bottom = GymTheme.spacing.s16,
+                            ),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(
+                            text = stringResource(R.string.routines_classifications_label),
+                            style = GymTheme.type.subheadlineSemibold,
+                            color = GymTheme.colors.textPrimary,
+                        )
+                        TextButton(
+                            onClick = onDismiss,
+                            modifier = Modifier.align(Alignment.CenterEnd),
+                        ) {
+                            Text(
+                                text = stringResource(R.string.routines_done),
+                                style = GymTheme.type.subheadlineSemibold,
+                                color = GymTheme.colors.iconTint,
+                            )
+                        }
+                    }
+
+                    HorizontalDivider(color = GymTheme.colors.divider)
+
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(GymTheme.spacing.s16),
+                        verticalArrangement = Arrangement.spacedBy(GymTheme.spacing.s12),
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(
+                                    color = GymTheme.colors.secondaryButtonFill,
+                                    shape = RoundedCornerShape(10.dp),
+                                )
+                                .padding(
+                                    start = GymTheme.spacing.s10,
+                                    end = GymTheme.spacing.s4,
+                                    top = GymTheme.spacing.s4,
+                                    bottom = GymTheme.spacing.s4,
+                                ),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(GymTheme.spacing.s6),
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.Search,
+                                contentDescription = null,
+                                tint = GymTheme.colors.textSecondary,
+                                modifier = Modifier.size(GymTheme.spacing.s20),
+                            )
+                            TextField(
+                                value = searchQuery,
+                                onValueChange = onSearchQueryChanged,
+                                modifier = Modifier.weight(1f),
+                                textStyle = GymTheme.type.subheadlineRegular,
+                                placeholder = {
+                                    Text(
+                                        text = stringResource(R.string.classifications_search_hint),
+                                        style = GymTheme.type.subheadlineRegular,
+                                        color = GymTheme.colors.textSecondary,
+                                    )
+                                },
+                                colors = TextFieldDefaults.colors(
+                                    focusedContainerColor = Color.Transparent,
+                                    unfocusedContainerColor = Color.Transparent,
+                                    focusedIndicatorColor = Color.Transparent,
+                                    unfocusedIndicatorColor = Color.Transparent,
+                                    disabledIndicatorColor = Color.Transparent,
+                                ),
+                                singleLine = true,
+                            )
+                        }
+
+                        val filteredClassifications = uiState.classifications.filter { classification ->
+                            searchQuery.isBlank() || classification.name.contains(
+                                searchQuery,
+                                ignoreCase = true,
+                            )
+                        }
+
+                        if (filteredClassifications.isEmpty()) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = GymTheme.spacing.s20),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Text(
+                                    text = stringResource(R.string.classifications_empty),
+                                    style = GymTheme.type.subheadlineRegular,
+                                    color = GymTheme.colors.textSecondary,
+                                )
+                            }
+                        } else {
+                            Surface(
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(12.dp),
+                                color = GymTheme.colors.secondaryButtonFill,
+                            ) {
+                                LazyColumn(
+                                    modifier = Modifier.heightIn(max = GymTheme.layout.classificationListHeight),
+                                ) {
+                                    itemsIndexed(
+                                        filteredClassifications,
+                                        key = { _, classification -> classification.id },
+                                    ) { index, classification ->
+                                        val isSelected = classification.id in selectedClassificationIds
+                                        Column {
+                                            Row(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .clickable { onToggleClassification(classification.id) }
+                                                    .padding(
+                                                        horizontal = GymTheme.spacing.s16,
+                                                        vertical = GymTheme.spacing.s6,
+                                                    ),
+                                                horizontalArrangement = Arrangement.SpaceBetween,
+                                                verticalAlignment = Alignment.CenterVertically,
+                                            ) {
+                                                Text(
+                                                    text = classification.name,
+                                                    style = GymTheme.type.subheadlineRegular,
+                                                    color = GymTheme.colors.textPrimary,
+                                                    modifier = Modifier.weight(1f),
+                                                )
+                                                if (isSelected) {
+                                                    Icon(
+                                                        imageVector = Icons.Rounded.Check,
+                                                        contentDescription = null,
+                                                        tint = GymTheme.colors.iconTint,
+                                                        modifier = Modifier.size(GymTheme.layout.icon18),
+                                                    )
+                                                }
+                                            }
+                                            if (index < filteredClassifications.lastIndex) {
+                                                HorizontalDivider(
+                                                    modifier = Modifier.padding(start = GymTheme.spacing.s16),
+                                                    color = GymTheme.colors.divider,
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(GymTheme.spacing.s8))
                 }
             }
         }

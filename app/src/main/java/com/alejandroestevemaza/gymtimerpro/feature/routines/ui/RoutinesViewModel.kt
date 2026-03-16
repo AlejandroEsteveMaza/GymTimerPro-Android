@@ -88,8 +88,7 @@ class RoutinesViewModel(
             classifications = baseState.classifications,
             appliedRoutineId = baseState.appliedRoutineId,
             searchQuery = interactiveState.searchQuery,
-            expandedSectionId = interactiveState.expandedSectionId
-                ?: defaultExpandedSectionId(baseState.routines, baseState.classifications),
+            expandedSectionId = interactiveState.expandedSectionId,
             editorState = interactiveState.editorState,
             classificationDraft = classificationManagerState.classificationDraft,
             classificationManagerOpen = classificationManagerState.classificationManagerOpen,
@@ -220,7 +219,8 @@ class RoutinesViewModel(
     }
 
     fun onStartCreateClassification() {
-        classificationDraft.value = ClassificationDraft()
+        val prefill = classificationSearchQuery.value.trim()
+        classificationDraft.value = ClassificationDraft(value = prefill)
     }
 
     fun onStartRenameClassification(classificationId: String) {
@@ -417,20 +417,6 @@ class RoutinesViewModel(
             }
         }
 
-        private fun defaultExpandedSectionId(
-            routines: List<Routine>,
-            classifications: List<RoutineClassification>,
-        ): String? {
-            val firstClassificationId = classifications
-                .sortedBy { it.name.lowercase(Locale.getDefault()) }
-                .firstOrNull()
-                ?.id
-            return firstClassificationId ?: if (routines.any { it.classifications.isEmpty() }) {
-                RoutinesUiState.UNCLASSIFIED_SECTION_ID
-            } else {
-                null
-            }
-        }
     }
 }
 

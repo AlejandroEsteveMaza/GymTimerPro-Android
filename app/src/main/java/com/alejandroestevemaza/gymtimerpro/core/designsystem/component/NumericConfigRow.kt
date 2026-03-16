@@ -3,11 +3,9 @@ package com.alejandroestevemaza.gymtimerpro.core.designsystem.component
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
@@ -17,7 +15,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.unit.dp
 import com.alejandroestevemaza.gymtimerpro.core.designsystem.theme.GymTheme
 
 @Composable
@@ -25,8 +22,10 @@ fun NumericConfigRow(
     icon: ImageVector,
     title: String,
     valueText: String,
-    onDecrease: () -> Unit,
-    onIncrease: () -> Unit,
+    value: Int,
+    valueRange: IntRange,
+    valueStep: Int = 1,
+    onValueChange: (Int) -> Unit,
     onOpenEditor: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
     state: GymComponentState = GymComponentState.Normal,
@@ -60,27 +59,27 @@ fun NumericConfigRow(
                     modifier = Modifier.size(GymTheme.layout.configIconGlyph),
                 )
             }
-            Column(verticalArrangement = Arrangement.spacedBy(GymTheme.spacing.s2)) {
-                Text(
-                    text = title,
-                    style = GymTheme.type.valueLabel,
-                    color = GymTheme.colors.textPrimary,
-                )
-                Text(
-                    text = valueText,
-                    modifier = if (onOpenEditor != null && state != GymComponentState.Disabled) {
-                        Modifier.clickable(onClick = onOpenEditor)
-                    } else {
-                        Modifier
-                    },
-                    style = GymTheme.type.numericCta,
-                    color = GymTheme.colors.textPrimary,
-                )
-            }
+            Text(
+                text = title,
+                style = GymTheme.type.valueLabel,
+                color = GymTheme.colors.textPrimary,
+            )
         }
+        Text(
+            text = valueText,
+            modifier = if (onOpenEditor != null && state != GymComponentState.Disabled) {
+                Modifier.clickable(onClick = onOpenEditor)
+            } else {
+                Modifier
+            },
+            style = GymTheme.type.numericCta,
+            color = GymTheme.colors.textPrimary,
+        )
         HorizontalWheelStepper(
-            onDecrement = onDecrease,
-            onIncrement = onIncrease,
+            value = value,
+            valueRange = valueRange,
+            step = valueStep,
+            onValueChange = onValueChange,
             state = state,
         )
     }

@@ -86,16 +86,23 @@ class DesignComponentsRoborazziTest {
                 icon = Icons.Rounded.FitnessCenter,
                 title = "Sets",
                 valueText = "4",
-                onDecrease = {},
-                onIncrease = {},
+                value = 4,
+                valueRange = 1..10,
+                valueStep = 1,
+                onValueChange = {},
                 onOpenEditor = {},
                 state = GymComponentState.Normal,
             )
             Row(horizontalArrangement = Arrangement.spacedBy(GymTheme.spacing.s12)) {
-                HorizontalWheelStepper(onDecrement = {}, onIncrement = {})
                 HorizontalWheelStepper(
-                    onDecrement = {},
-                    onIncrement = {},
+                    value = 4,
+                    valueRange = 1..10,
+                    onValueChange = {},
+                )
+                HorizontalWheelStepper(
+                    value = 4,
+                    valueRange = 1..10,
+                    onValueChange = {},
                     state = GymComponentState.Disabled,
                 )
             }

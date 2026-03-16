@@ -92,13 +92,23 @@ class TrainingViewModel(
         val state = uiState.value
         if (!state.canEditConfiguration) return
         val target = (state.session.totalSets + 1).coerceAtMost(state.settings.maxSetsPreference.maxSets)
-        persistSession { session -> session.copy(totalSets = target) }
+        onTotalSetsChanged(target)
     }
 
     fun onDecreaseTotalSets() {
         val state = uiState.value
         if (!state.canEditConfiguration) return
         val target = (state.session.totalSets - 1).coerceAtLeast(TrainingDefaults.minSets)
+        onTotalSetsChanged(target)
+    }
+
+    fun onTotalSetsChanged(targetValue: Int) {
+        val state = uiState.value
+        if (!state.canEditConfiguration) return
+        val target = targetValue
+            .coerceAtLeast(TrainingDefaults.minSets)
+            .coerceAtMost(state.settings.maxSetsPreference.maxSets)
+        if (target == state.session.totalSets) return
         persistSession { session ->
             session.copy(
                 totalSets = target,
@@ -112,7 +122,7 @@ class TrainingViewModel(
         if (!state.canEditConfiguration) return
         val step = state.settings.restIncrementPreference.seconds
         val target = (state.session.restSeconds + step).coerceAtMost(TrainingDefaults.maxRestSeconds)
-        persistSession { session -> session.copy(restSeconds = target) }
+        onRestSecondsChanged(target)
     }
 
     fun onDecreaseRestSeconds() {
@@ -120,7 +130,19 @@ class TrainingViewModel(
         if (!state.canEditConfiguration) return
         val step = state.settings.restIncrementPreference.seconds
         val target = (state.session.restSeconds - step).coerceAtLeast(TrainingDefaults.minRestSeconds)
-        persistSession { session -> session.copy(restSeconds = target) }
+        onRestSecondsChanged(target)
+    }
+
+    fun onRestSecondsChanged(targetValue: Int) {
+        val state = uiState.value
+        if (!state.canEditConfiguration) return
+        val step = state.settings.restIncrementPreference.seconds
+        val clampedTarget = targetValue
+            .coerceIn(TrainingDefaults.minRestSeconds, TrainingDefaults.maxRestSeconds)
+        val normalizedTarget = TrainingDefaults.minRestSeconds +
+            (((clampedTarget - TrainingDefaults.minRestSeconds) / step) * step)
+        if (normalizedTarget == state.session.restSeconds) return
+        persistSession { session -> session.copy(restSeconds = normalizedTarget) }
     }
 
     fun onStartRest() {
