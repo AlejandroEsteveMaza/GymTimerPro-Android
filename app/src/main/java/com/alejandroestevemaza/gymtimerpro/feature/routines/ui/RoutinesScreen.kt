@@ -37,10 +37,13 @@ import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.ExpandLess
 import androidx.compose.material.icons.rounded.ExpandMore
+import androidx.compose.material.icons.rounded.FitnessCenter
+import androidx.compose.material.icons.rounded.Layers
+import androidx.compose.material.icons.rounded.MonitorWeight
 import androidx.compose.material.icons.rounded.MoreHoriz
 import androidx.compose.material.icons.rounded.PlayArrow
-import androidx.compose.material.icons.rounded.Remove
 import androidx.compose.material.icons.rounded.Search
+import androidx.compose.material.icons.rounded.Timer
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
@@ -59,6 +62,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
@@ -79,6 +83,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.alejandroestevemaza.gymtimerpro.R
 import com.alejandroestevemaza.gymtimerpro.core.designsystem.component.HorizontalWheelStepper
+import com.alejandroestevemaza.gymtimerpro.core.designsystem.component.NumericConfigRow
 import com.alejandroestevemaza.gymtimerpro.core.designsystem.component.RoutineRowItem
 import com.alejandroestevemaza.gymtimerpro.core.designsystem.theme.GymTheme
 import com.alejandroestevemaza.gymtimerpro.core.format.formatRoutineSummary
@@ -116,12 +121,9 @@ fun RoutinesRoute(
         onDeleteClassification = routinesViewModel::onDeleteClassification,
         onDismissEditor = routinesViewModel::onDismissEditor,
         onEditorNameChanged = routinesViewModel::onEditorNameChanged,
-        onEditorIncreaseSets = routinesViewModel::onEditorIncreaseSets,
-        onEditorDecreaseSets = routinesViewModel::onEditorDecreaseSets,
-        onEditorIncreaseReps = routinesViewModel::onEditorIncreaseReps,
-        onEditorDecreaseReps = routinesViewModel::onEditorDecreaseReps,
-        onEditorIncreaseRest = routinesViewModel::onEditorIncreaseRest,
-        onEditorDecreaseRest = routinesViewModel::onEditorDecreaseRest,
+        onEditorSetsChanged = routinesViewModel::onEditorSetsChanged,
+        onEditorRepsChanged = routinesViewModel::onEditorRepsChanged,
+        onEditorRestChanged = routinesViewModel::onEditorRestChanged,
         onEditorWeightChanged = routinesViewModel::onEditorWeightChanged,
         onToggleClassification = routinesViewModel::onToggleClassification,
         onSaveEditor = routinesViewModel::onSaveEditor,
@@ -150,12 +152,9 @@ fun RoutinesScreen(
     onDeleteClassification: (String) -> Unit,
     onDismissEditor: () -> Unit,
     onEditorNameChanged: (String) -> Unit,
-    onEditorIncreaseSets: () -> Unit,
-    onEditorDecreaseSets: () -> Unit,
-    onEditorIncreaseReps: () -> Unit,
-    onEditorDecreaseReps: () -> Unit,
-    onEditorIncreaseRest: () -> Unit,
-    onEditorDecreaseRest: () -> Unit,
+    onEditorSetsChanged: (Int) -> Unit,
+    onEditorRepsChanged: (Int) -> Unit,
+    onEditorRestChanged: (Int) -> Unit,
     onEditorWeightChanged: (String) -> Unit,
     onToggleClassification: (String) -> Unit,
     onSaveEditor: () -> Unit,
@@ -186,12 +185,9 @@ fun RoutinesScreen(
                 uiState = uiState,
                 onDismiss = onDismissEditor,
                 onNameChanged = onEditorNameChanged,
-                onIncreaseSets = onEditorIncreaseSets,
-                onDecreaseSets = onEditorDecreaseSets,
-                onIncreaseReps = onEditorIncreaseReps,
-                onDecreaseReps = onEditorDecreaseReps,
-                onIncreaseRest = onEditorIncreaseRest,
-                onDecreaseRest = onEditorDecreaseRest,
+                onSetsChanged = onEditorSetsChanged,
+                onRepsChanged = onEditorRepsChanged,
+                onRestChanged = onEditorRestChanged,
                 onWeightChanged = onEditorWeightChanged,
                 onToggleClassification = onToggleClassification,
                 onSave = onSaveEditor,
@@ -694,7 +690,7 @@ private fun ClassificationManagerDialog(
                                 textStyle = GymTheme.type.subheadlineRegular,
                                 placeholder = {
                                     Text(
-                                        text = stringResource(R.string.classifications_search_hint),
+                                        text = stringResource(R.string.routines_search_hint),
                                         style = GymTheme.type.subheadlineRegular,
                                         color = GymTheme.colors.textSecondary,
                                     )
@@ -934,12 +930,9 @@ private fun RoutineEditorDialog(
     uiState: RoutinesUiState,
     onDismiss: () -> Unit,
     onNameChanged: (String) -> Unit,
-    onIncreaseSets: () -> Unit,
-    onDecreaseSets: () -> Unit,
-    onIncreaseReps: () -> Unit,
-    onDecreaseReps: () -> Unit,
-    onIncreaseRest: () -> Unit,
-    onDecreaseRest: () -> Unit,
+    onSetsChanged: (Int) -> Unit,
+    onRepsChanged: (Int) -> Unit,
+    onRestChanged: (Int) -> Unit,
     onWeightChanged: (String) -> Unit,
     onToggleClassification: (String) -> Unit,
     onSave: () -> Unit,
@@ -1012,12 +1005,9 @@ private fun RoutineEditorDialog(
             uiState = uiState,
             onDismiss = onDismiss,
             onNameChanged = onNameChanged,
-            onIncreaseSets = onIncreaseSets,
-            onDecreaseSets = onDecreaseSets,
-            onIncreaseReps = onIncreaseReps,
-            onDecreaseReps = onDecreaseReps,
-            onIncreaseRest = onIncreaseRest,
-            onDecreaseRest = onDecreaseRest,
+            onSetsChanged = onSetsChanged,
+            onRepsChanged = onRepsChanged,
+            onRestChanged = onRestChanged,
             onWeightChanged = onWeightChanged,
             onToggleClassification = onToggleClassification,
             onOpenClassificationPicker = { showClassificationPicker = true },
@@ -1239,12 +1229,9 @@ private fun RoutineEditorContent(
     uiState: RoutinesUiState,
     onDismiss: () -> Unit,
     onNameChanged: (String) -> Unit,
-    onIncreaseSets: () -> Unit,
-    onDecreaseSets: () -> Unit,
-    onIncreaseReps: () -> Unit,
-    onDecreaseReps: () -> Unit,
-    onIncreaseRest: () -> Unit,
-    onDecreaseRest: () -> Unit,
+    onSetsChanged: (Int) -> Unit,
+    onRepsChanged: (Int) -> Unit,
+    onRestChanged: (Int) -> Unit,
     onWeightChanged: (String) -> Unit,
     onToggleClassification: (String) -> Unit,
     onOpenClassificationPicker: () -> Unit,
@@ -1287,8 +1274,13 @@ private fun RoutineEditorContent(
                 onValueChange = onNameChanged,
                 modifier = Modifier.fillMaxWidth(),
                 label = { Text(text = stringResource(R.string.routines_name_label)) },
-                supportingText = {
-                    Text(text = stringResource(R.string.routines_name_counter, editorState.nameCount))
+                trailingIcon = {
+                    Text(
+                        text = stringResource(R.string.routines_name_counter, editorState.nameCount),
+                        style = GymTheme.type.captionRegular,
+                        color = GymTheme.colors.textSecondary,
+                        modifier = Modifier.padding(end = GymTheme.spacing.s8),
+                    )
                 },
                 isError = editorState.shouldShowNameError,
                 singleLine = true,
@@ -1296,45 +1288,6 @@ private fun RoutineEditorContent(
             if (editorState.shouldShowNameError) {
                 Text(
                     text = stringResource(R.string.routines_invalid_name),
-                    style = GymTheme.type.footnoteRegular,
-                    color = GymTheme.colors.error,
-                )
-            }
-
-            StepperEditorRow(
-                label = stringResource(R.string.routines_sets_label),
-                value = editorState.totalSets.toString(),
-                onDecrease = onDecreaseSets,
-                onIncrease = onIncreaseSets,
-            )
-            StepperEditorRow(
-                label = stringResource(R.string.routines_reps_label),
-                value = editorState.reps.toString(),
-                onDecrease = onDecreaseReps,
-                onIncrease = onIncreaseReps,
-            )
-            StepperEditorRow(
-                label = stringResource(R.string.routines_rest_label),
-                value = com.alejandroestevemaza.gymtimerpro.core.format.formatDuration(
-                    editorState.restSeconds,
-                    uiState.settings.timerDisplayFormat,
-                ),
-                onDecrease = onDecreaseRest,
-                onIncrease = onIncreaseRest,
-            )
-
-            OutlinedTextField(
-                value = editorState.weightInput,
-                onValueChange = onWeightChanged,
-                modifier = Modifier.fillMaxWidth(),
-                label = { Text(text = stringResource(R.string.routines_weight_label)) },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                isError = !editorState.isWeightValid,
-                singleLine = true,
-            )
-            if (!editorState.isWeightValid) {
-                Text(
-                    text = stringResource(R.string.routines_invalid_weight),
                     style = GymTheme.type.footnoteRegular,
                     color = GymTheme.colors.error,
                 )
@@ -1394,11 +1347,78 @@ private fun RoutineEditorContent(
                 }
             }
 
-            Row(horizontalArrangement = Arrangement.spacedBy(GymTheme.spacing.s8)) {
-                TextButton(onClick = onDismiss) {
+            Column(verticalArrangement = Arrangement.spacedBy(GymTheme.spacing.s8)) {
+                Text(
+                    text = stringResource(R.string.routines_parameters_label),
+                    style = GymTheme.type.headlineSemibold,
+                    color = GymTheme.colors.textPrimary,
+                )
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(GymTheme.radii.r20),
+                ) {
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        StepperEditorRow(
+                            icon = Icons.Rounded.Layers,
+                            label = stringResource(R.string.routines_sets_label),
+                            valueText = editorState.totalSets.toString(),
+                            value = editorState.totalSets,
+                            valueRange = 1..uiState.settings.maxSetsPreference.maxSets,
+                            onValueChanged = onSetsChanged,
+                        )
+                        HorizontalDivider(color = GymTheme.colors.divider)
+                        StepperEditorRow(
+                            icon = Icons.Rounded.FitnessCenter,
+                            label = stringResource(R.string.routines_reps_label),
+                            valueText = editorState.reps.toString(),
+                            value = editorState.reps,
+                            valueRange = 1..30,
+                            onValueChanged = onRepsChanged,
+                        )
+                        HorizontalDivider(color = GymTheme.colors.divider)
+                        StepperEditorRow(
+                            icon = Icons.Rounded.Timer,
+                            label = stringResource(R.string.routines_rest_label),
+                            valueText = com.alejandroestevemaza.gymtimerpro.core.format.formatDuration(
+                                editorState.restSeconds,
+                                uiState.settings.timerDisplayFormat,
+                            ),
+                            value = editorState.restSeconds,
+                            valueRange = 15..300,
+                            valueStep = uiState.settings.restIncrementPreference.seconds,
+                            onValueChanged = onRestChanged,
+                        )
+                        HorizontalDivider(color = GymTheme.colors.divider)
+                        WeightEditorRow(
+                            value = editorState.weightInput,
+                            isWeightValid = editorState.isWeightValid,
+                            onWeightChanged = onWeightChanged,
+                        )
+                    }
+                }
+                if (!editorState.isWeightValid) {
+                    Text(
+                        text = stringResource(R.string.routines_invalid_weight),
+                        style = GymTheme.type.footnoteRegular,
+                        color = GymTheme.colors.error,
+                    )
+                }
+            }
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(GymTheme.spacing.s12),
+            ) {
+                OutlinedButton(
+                    onClick = onDismiss,
+                    modifier = Modifier.weight(1f),
+                ) {
                     Text(text = stringResource(R.string.routines_cancel))
                 }
-                OutlinedButton(onClick = onSave) {
+                Button(
+                    onClick = onSave,
+                    modifier = Modifier.weight(1f),
+                ) {
                     Text(text = stringResource(R.string.routines_save))
                 }
             }
@@ -1537,7 +1557,7 @@ private fun RoutineClassificationPickerDialog(
                                 textStyle = GymTheme.type.subheadlineRegular,
                                 placeholder = {
                                     Text(
-                                        text = stringResource(R.string.classifications_search_hint),
+                                        text = stringResource(R.string.routines_search_hint),
                                         style = GymTheme.type.subheadlineRegular,
                                         color = GymTheme.colors.textSecondary,
                                     )
@@ -1607,7 +1627,7 @@ private fun RoutineClassificationPickerDialog(
                                                     .clickable { onToggleClassification(classification.id) }
                                                     .padding(
                                                         horizontal = GymTheme.spacing.s16,
-                                                        vertical = GymTheme.spacing.s6,
+                                                        vertical = GymTheme.spacing.s12,
                                                     ),
                                                 horizontalArrangement = Arrangement.SpaceBetween,
                                                 verticalAlignment = Alignment.CenterVertically,
@@ -1648,39 +1668,77 @@ private fun RoutineClassificationPickerDialog(
 
 @Composable
 private fun StepperEditorRow(
+    icon: ImageVector,
     label: String,
-    value: String,
-    onDecrease: () -> Unit,
-    onIncrease: () -> Unit,
+    valueText: String,
+    value: Int,
+    valueRange: IntRange,
+    valueStep: Int = 1,
+    onValueChanged: (Int) -> Unit,
 ) {
-    Card(modifier = Modifier.fillMaxWidth()) {
+    NumericConfigRow(
+        icon = icon,
+        title = label,
+        valueText = valueText,
+        value = value,
+        valueRange = valueRange,
+        valueStep = valueStep,
+        onValueChange = onValueChanged,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = GymTheme.spacing.s16),
+    )
+}
+
+@Composable
+private fun WeightEditorRow(
+    value: String,
+    isWeightValid: Boolean,
+    onWeightChanged: (String) -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = GymTheme.layout.minTapHeight)
+            .padding(horizontal = GymTheme.spacing.s16),
+        horizontalArrangement = Arrangement.spacedBy(GymTheme.spacing.s12),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = GymTheme.spacing.s16, vertical = GymTheme.spacing.s14),
-            horizontalArrangement = Arrangement.SpaceBetween,
+            modifier = Modifier.weight(1f),
             verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(GymTheme.spacing.s8),
         ) {
-            Column {
-                Text(
-                    text = label,
-                    style = GymTheme.type.captionSemibold,
-                    color = GymTheme.colors.textSecondary,
-                )
-                Text(
-                    text = value,
-                    style = GymTheme.type.numericSecondary,
-                    color = GymTheme.colors.textPrimary,
+            Box(
+                modifier = Modifier
+                    .size(GymTheme.layout.configIconFrame)
+                    .background(
+                        color = GymTheme.colors.iconBackground,
+                        shape = RoundedCornerShape(GymTheme.radii.r8),
+                    ),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    imageVector = Icons.Rounded.MonitorWeight,
+                    contentDescription = null,
+                    tint = GymTheme.colors.iconTint,
+                    modifier = Modifier.size(GymTheme.layout.configIconGlyph),
                 )
             }
-            Row(horizontalArrangement = Arrangement.spacedBy(GymTheme.spacing.s4)) {
-                IconButton(onClick = onDecrease) {
-                    Icon(imageVector = Icons.Rounded.Remove, contentDescription = null)
-                }
-                IconButton(onClick = onIncrease) {
-                    Icon(imageVector = Icons.Rounded.Add, contentDescription = null)
-                }
-            }
+            Text(
+                text = stringResource(R.string.routines_weight_label),
+                style = GymTheme.type.valueLabel,
+                color = GymTheme.colors.textPrimary,
+            )
         }
+        OutlinedTextField(
+            value = value,
+            onValueChange = onWeightChanged,
+            modifier = Modifier.width(130.dp),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+            isError = !isWeightValid,
+            singleLine = true,
+            textStyle = GymTheme.type.numericSecondary,
+        )
     }
 }

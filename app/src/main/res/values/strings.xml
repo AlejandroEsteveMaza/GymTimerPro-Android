@@ -88,7 +88,7 @@
     <string name="progress_badge_three_week_subtitle">Log at least 3 workouts in a single week.</string>
     <string name="progress_badge_streak_4_title">4-week streak</string>
     <string name="progress_badge_streak_4_subtitle">Train at least once in 4 consecutive weeks.</string>
-    <string name="routines_search_hint">Search routines or classifications</string>
+    <string name="routines_search_hint">Search</string>
     <string name="routines_add">Add routine</string>
     <string name="routines_manage_classifications">Manage classifications</string>
     <string name="routines_empty_title">No Routines</string>
@@ -106,6 +106,7 @@
     <string name="routines_reps_label">Reps</string>
     <string name="routines_rest_label">Rest</string>
     <string name="routines_weight_label">Weight</string>
+    <string name="routines_parameters_label">Parameters</string>
     <string name="routines_classifications_label">Classifications</string>
     <string name="routines_save">Save</string>
     <string name="routines_cancel">Cancel</string>
@@ -119,7 +120,7 @@
     <string name="routines_invalid_name">Name is required</string>
     <string name="routines_invalid_weight">Enter a valid weight or leave it empty</string>
     <string name="classifications_title">Classifications</string>
-    <string name="classifications_search_hint">Search classifications</string>
+    <string name="classifications_search_hint">Search</string>
     <string name="classifications_new_name">New classification</string>
     <string name="classifications_rename">Rename</string>
     <string name="classifications_create">Create</string>

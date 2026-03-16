@@ -1,0 +1,5 @@
+<resources>
+    <string name="routines_search_hint">Buscar</string>
+    <string name="classifications_search_hint">Buscar</string>
+    <string name="routines_parameters_label">Parámetros</string>
+</resources>

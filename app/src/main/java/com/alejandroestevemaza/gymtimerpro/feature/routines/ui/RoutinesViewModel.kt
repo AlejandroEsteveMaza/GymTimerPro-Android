@@ -143,42 +143,22 @@ class RoutinesViewModel(
         }
     }
 
-    fun onEditorIncreaseSets() {
+    fun onEditorSetsChanged(value: Int) {
         val maxSets = uiState.value.settings.maxSetsPreference.maxSets
         updateEditor { current ->
-            current.copy(totalSets = (current.totalSets + 1).coerceAtMost(maxSets))
+            current.copy(totalSets = value.coerceIn(1, maxSets))
         }
     }
 
-    fun onEditorDecreaseSets() {
+    fun onEditorRepsChanged(value: Int) {
         updateEditor { current ->
-            current.copy(totalSets = (current.totalSets - 1).coerceAtLeast(1))
+            current.copy(reps = value.coerceIn(1, 30))
         }
     }
 
-    fun onEditorIncreaseReps() {
+    fun onEditorRestChanged(value: Int) {
         updateEditor { current ->
-            current.copy(reps = (current.reps + 1).coerceAtMost(30))
-        }
-    }
-
-    fun onEditorDecreaseReps() {
-        updateEditor { current ->
-            current.copy(reps = (current.reps - 1).coerceAtLeast(1))
-        }
-    }
-
-    fun onEditorIncreaseRest() {
-        val step = uiState.value.settings.restIncrementPreference.seconds
-        updateEditor { current ->
-            current.copy(restSeconds = (current.restSeconds + step).coerceAtMost(300))
-        }
-    }
-
-    fun onEditorDecreaseRest() {
-        val step = uiState.value.settings.restIncrementPreference.seconds
-        updateEditor { current ->
-            current.copy(restSeconds = (current.restSeconds - step).coerceAtLeast(15))
+            current.copy(restSeconds = value.coerceIn(15, 300))
         }
     }
 

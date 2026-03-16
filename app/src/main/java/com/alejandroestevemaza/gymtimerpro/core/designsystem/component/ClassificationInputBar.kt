@@ -19,6 +19,8 @@ import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import com.alejandroestevemaza.gymtimerpro.R
 import com.alejandroestevemaza.gymtimerpro.core.designsystem.theme.GymTheme
 
 @Composable
@@ -69,7 +71,7 @@ fun ClassificationInputBar(
                 textStyle = GymTheme.type.subheadlineRegular,
                 placeholder = {
                     Text(
-                        text = "",
+                        text = stringResource(R.string.routines_search_hint),
                         style = GymTheme.type.subheadlineRegular,
                     )
                 },
