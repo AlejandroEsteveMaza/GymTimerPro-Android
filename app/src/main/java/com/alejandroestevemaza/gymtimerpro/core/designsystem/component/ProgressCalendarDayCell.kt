@@ -14,6 +14,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import com.alejandroestevemaza.gymtimerpro.core.designsystem.theme.GymTheme
@@ -68,7 +69,8 @@ fun ProgressCalendarDayCell(
 
     Box(
         modifier = modifier
-            .heightIn(min = GymTheme.layout.progressCalendarRowMinHeight),
+            .heightIn(min = GymTheme.layout.progressCalendarRowMinHeight)
+            .alpha(if (isCurrentMonth) 1f else 0.3f),
         contentAlignment = Alignment.Center,
     ) {
         Box(
@@ -105,7 +107,7 @@ fun ProgressCalendarDayCell(
                 Text(
                     text = dayLabel,
                     style = GymTheme.type.caption2Semibold,
-                    color = if (isCurrentMonth) textColor else GymTheme.colors.textSecondary,
+                    color = textColor,
                     textAlign = TextAlign.Center,
                 )
             }

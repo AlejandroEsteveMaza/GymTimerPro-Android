@@ -49,6 +49,7 @@ data class GymBorders(
 data class GymElevation(
     val card: Dp = 12.dp,
     val bottomControls: Dp = 12.dp,
+    val bottomNav: Dp = 10.dp,
     val primaryButton: Dp = 10.dp,
     val lockedOverlay: Dp = 18.dp,
 )
@@ -89,6 +90,14 @@ data class GymLayout(
     val progressCalendarGridGap: Dp = 6.dp,
     val progressStreakIndicatorSize: Dp = 32.dp,
     val progressStreakColumnWidth: Dp = 40.dp,
+    val bottomNavHeight: Dp = 60.dp,
+    val bottomNavHorizontalPadding: Dp = 14.dp,
+    val bottomNavVerticalPadding: Dp = 8.dp,
+    val bottomNavItemIconSize: Dp = 20.dp,
+    val bottomNavItemHorizontalPadding: Dp = 6.dp,
+    val bottomNavItemVerticalPadding: Dp = 6.dp,
+    val bottomNavActiveIndicatorHorizontalPadding: Dp = 8.dp,
+    val bottomNavActiveIndicatorVerticalPadding: Dp = 3.dp,
 )
 
 internal val GymShapeTokens = Shapes(

@@ -66,6 +66,12 @@ private val CalendarStreakLight = Color(0xFFFF9500)
 private val CalendarStreakDark = Color(0xFFFF9F0A)
 private val ErrorLight = Color(0xFFFF3B30)
 private val ErrorDark = Color(0xFFFF453A)
+private val BottomNavBackgroundLight = Color(0xF7FFFFFF)
+private val BottomNavBackgroundDark = Color(0xE01C1C1E)
+private val BottomNavBorderLight = Color(0x333C3C43)
+private val BottomNavBorderDark = Color(0x66545458)
+private val BottomNavActivePillLight = Color(0x1F007AFF)
+private val BottomNavActivePillDark = Color(0x290A84FF)
 
 internal val GymLightColorScheme: ColorScheme = lightColorScheme(
     primary = LightIconTint,
@@ -138,6 +144,9 @@ data class GymColors(
     val calendarWorkout: Color,
     val calendarStreak: Color,
     val error: Color,
+    val bottomNavBackground: Color,
+    val bottomNavBorder: Color,
+    val bottomNavActivePill: Color,
 )
 
 internal val GymLightColors = GymColors(
@@ -174,6 +183,9 @@ internal val GymLightColors = GymColors(
     calendarWorkout = CalendarWorkoutLight,
     calendarStreak = CalendarStreakLight,
     error = ErrorLight,
+    bottomNavBackground = BottomNavBackgroundLight,
+    bottomNavBorder = BottomNavBorderLight,
+    bottomNavActivePill = BottomNavActivePillLight,
 )
 
 internal val GymDarkColors = GymColors(
@@ -210,4 +222,7 @@ internal val GymDarkColors = GymColors(
     calendarWorkout = CalendarWorkoutDark,
     calendarStreak = CalendarStreakDark,
     error = ErrorDark,
+    bottomNavBackground = BottomNavBackgroundDark,
+    bottomNavBorder = BottomNavBorderDark,
+    bottomNavActivePill = BottomNavActivePillDark,
 )

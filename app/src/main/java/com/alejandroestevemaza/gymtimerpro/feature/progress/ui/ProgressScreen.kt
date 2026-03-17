@@ -12,12 +12,12 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -28,7 +28,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.BarChart
+import androidx.compose.material.icons.rounded.ArrowDropDown
 import androidx.compose.material.icons.rounded.CalendarMonth
+import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.FitnessCenter
 import androidx.compose.material.icons.rounded.History
 import androidx.compose.material.icons.rounded.LocalFireDepartment
@@ -37,20 +39,22 @@ import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.MilitaryTech
 import androidx.compose.material.icons.rounded.RadioButtonUnchecked
 import androidx.compose.material3.Card
-import androidx.compose.material3.FilterChip
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -131,7 +135,6 @@ fun ProgressScreen(
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
                 .statusBarsPadding()
-                .navigationBarsPadding()
                 .padding(horizontal = GymTheme.spacing.s16, vertical = GymTheme.spacing.s12),
             verticalArrangement = Arrangement.spacedBy(GymTheme.spacing.s20),
         ) {
@@ -182,6 +185,7 @@ private fun ChartsCard(
     onSelectPeriod: (ProgressPeriod) -> Unit,
 ) {
     val noneText = stringResource(R.string.progress_summary_none)
+    var periodMenuExpanded by remember { mutableStateOf(false) }
 
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -198,26 +202,68 @@ private fun ChartsCard(
                 .padding(GymTheme.spacing.s14),
             verticalArrangement = Arrangement.spacedBy(GymTheme.spacing.s14),
         ) {
-            Text(
-                text = stringResource(R.string.progress_workouts_over_time_title),
-                style = GymTheme.type.headlineSemibold,
-                color = GymTheme.colors.textPrimary,
-            )
-
-            SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-                ProgressPeriod.entries.forEachIndexed { index, period ->
-                    SegmentedButton(
-                        selected = period == selectedPeriod,
-                        onClick = { onSelectPeriod(period) },
-                        shape = SegmentedButtonDefaults.itemShape(
-                            index = index,
-                            count = ProgressPeriod.entries.size,
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = stringResource(R.string.progress_workouts_over_time_title),
+                    style = GymTheme.type.headlineSemibold,
+                    color = GymTheme.colors.textPrimary,
+                )
+                Box {
+                    TextButton(
+                        onClick = { periodMenuExpanded = true },
+                    ) {
+                        Text(
+                            text = stringResource(selectedPeriod.labelRes()),
+                            style = GymTheme.type.captionSemibold,
+                            color = GymTheme.colors.iconTint,
+                        )
+                        Icon(
+                            imageVector = Icons.Rounded.ArrowDropDown,
+                            contentDescription = null,
+                            tint = GymTheme.colors.iconTint,
+                            modifier = Modifier
+                                .padding(start = GymTheme.spacing.s4)
+                                .size(GymTheme.layout.icon18),
+                        )
+                    }
+                    DropdownMenu(
+                        expanded = periodMenuExpanded,
+                        onDismissRequest = { periodMenuExpanded = false },
+                        modifier = Modifier.background(
+                            color = GymTheme.colors.cardBackground,
+                            shape = RoundedCornerShape(GymTheme.radii.r12),
                         ),
-                        icon = {},
-                        label = {
-                            Text(text = stringResource(period.shortLabelRes()))
-                        },
-                    )
+                    ) {
+                        ProgressPeriod.entries.forEach { period ->
+                            DropdownMenuItem(
+                                text = {
+                                    Text(
+                                        text = stringResource(period.labelRes()),
+                                        style = GymTheme.type.subheadlineRegular,
+                                        color = GymTheme.colors.textPrimary,
+                                    )
+                                },
+                                leadingIcon = {
+                                    if (period == selectedPeriod) {
+                                        Icon(
+                                            imageVector = Icons.Rounded.Check,
+                                            contentDescription = null,
+                                            tint = GymTheme.colors.iconTint,
+                                            modifier = Modifier.size(GymTheme.layout.icon18),
+                                        )
+                                    }
+                                },
+                                onClick = {
+                                    periodMenuExpanded = false
+                                    onSelectPeriod(period)
+                                },
+                            )
+                        }
+                    }
                 }
             }
 
@@ -331,8 +377,14 @@ private fun WorkoutsLineChart(
         Column(
             modifier = Modifier
                 .align(Alignment.CenterEnd)
-                .padding(end = GymTheme.spacing.s2),
+                .fillMaxHeight()
+                .padding(
+                    top = GymTheme.spacing.s8,
+                    bottom = GymTheme.spacing.s20,
+                    end = GymTheme.spacing.s2,
+                ),
             verticalArrangement = Arrangement.SpaceBetween,
+            horizontalAlignment = Alignment.End,
         ) {
             listOf(maxY, (maxY * 2) / 3, maxY / 3, 0).forEach { yLabel ->
                 Text(

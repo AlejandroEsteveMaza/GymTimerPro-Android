@@ -3,12 +3,7 @@ package com.alejandroestevemaza.gymtimerpro.app
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarDefaults
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -17,15 +12,14 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.alejandroestevemaza.gymtimerpro.R
 import com.alejandroestevemaza.gymtimerpro.app.navigation.AppTab
+import com.alejandroestevemaza.gymtimerpro.app.navigation.PremiumBottomNavigationBar
 import com.alejandroestevemaza.gymtimerpro.core.designsystem.component.ProLockedOverlay
 import com.alejandroestevemaza.gymtimerpro.core.designsystem.theme.GymTimerProTheme
 import com.alejandroestevemaza.gymtimerpro.core.model.DailyUsageState
@@ -79,32 +73,19 @@ fun GymTimerProApp(
         Scaffold(
             modifier = Modifier.fillMaxSize(),
             bottomBar = {
-                NavigationBar(
-                    containerColor = MaterialTheme.colorScheme.background,
-                    tonalElevation = 0.dp,
-                    windowInsets = NavigationBarDefaults.windowInsets,
-                ) {
-                    AppTab.entries.forEach { tab ->
-                        val selected = currentDestination?.hierarchy?.any { destination ->
-                            destination.route == tab.route
-                        } == true
-
-                        NavigationBarItem(
-                            selected = selected,
-                            onClick = {
-                                navController.navigate(tab.route) {
-                                    popUpTo(navController.graph.startDestinationId) {
-                                        saveState = true
-                                    }
-                                    launchSingleTop = true
-                                    restoreState = true
-                                }
-                            },
-                            icon = { androidx.compose.material3.Icon(tab.icon, null) },
-                            label = { Text(text = stringResource(tab.labelRes)) },
-                        )
-                    }
-                }
+                PremiumBottomNavigationBar(
+                    tabs = AppTab.entries,
+                    currentDestination = currentDestination,
+                    onTabSelected = { tab ->
+                        navController.navigate(tab.route) {
+                            popUpTo(navController.graph.startDestinationId) {
+                                saveState = true
+                            }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
+                    },
+                )
             },
         ) { innerPadding ->
             NavHost(

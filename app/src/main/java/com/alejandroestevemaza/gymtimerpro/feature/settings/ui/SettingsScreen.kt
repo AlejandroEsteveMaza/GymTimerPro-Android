@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -62,7 +61,6 @@ fun SettingsScreen(
         modifier = Modifier
             .fillMaxSize()
             .statusBarsPadding()
-            .navigationBarsPadding()
             .padding(horizontal = GymTheme.spacing.s16, vertical = GymTheme.spacing.s12),
         verticalArrangement = Arrangement.spacedBy(GymTheme.spacing.s20),
     ) {
@@ -280,7 +278,7 @@ private fun <T> SettingsSegmentedSection(
             modifier = Modifier
                 .fillMaxWidth()
                 .background(
-                    color = GymTheme.colors.secondaryButtonFill,
+                    color = GymTheme.colors.cardBackground,
                     shape = RoundedCornerShape(GymTheme.radii.capsule),
                 )
                 .padding(GymTheme.spacing.s4),
