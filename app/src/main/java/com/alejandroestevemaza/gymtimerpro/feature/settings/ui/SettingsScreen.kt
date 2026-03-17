@@ -1,6 +1,7 @@
 package com.alejandroestevemaza.gymtimerpro.feature.settings.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -278,7 +279,7 @@ private fun <T> SettingsSegmentedSection(
             modifier = Modifier
                 .fillMaxWidth()
                 .background(
-                    color = GymTheme.colors.cardBackground,
+                    color = GymTheme.colors.secondaryButtonFill,
                     shape = RoundedCornerShape(GymTheme.radii.capsule),
                 )
                 .padding(GymTheme.spacing.s4),
@@ -292,11 +293,22 @@ private fun <T> SettingsSegmentedSection(
                         .heightIn(min = GymTheme.layout.minTapHeight)
                         .background(
                             color = if (isSelected) {
-                                GymTheme.colors.cardBackground
+                                GymTheme.colors.iconTint.copy(alpha = 0.16f)
                             } else {
                                 androidx.compose.ui.graphics.Color.Transparent
                             },
                             shape = RoundedCornerShape(GymTheme.radii.capsule),
+                        )
+                        .then(
+                            if (isSelected) {
+                                Modifier.border(
+                                    width = GymTheme.borders.quaternary,
+                                    color = GymTheme.colors.iconTint.copy(alpha = 0.42f),
+                                    shape = RoundedCornerShape(GymTheme.radii.capsule),
+                                )
+                            } else {
+                                Modifier
+                            }
                         )
                         .clickable { onOptionSelected(option) },
                     contentAlignment = Alignment.Center,
@@ -304,7 +316,7 @@ private fun <T> SettingsSegmentedSection(
                     Text(
                         text = optionLabel(option),
                         style = if (isSelected) GymTheme.type.subheadlineSemibold else GymTheme.type.subheadlineRegular,
-                        color = GymTheme.colors.textPrimary,
+                        color = if (isSelected) GymTheme.colors.iconTint else GymTheme.colors.textSecondary,
                     )
                 }
             }

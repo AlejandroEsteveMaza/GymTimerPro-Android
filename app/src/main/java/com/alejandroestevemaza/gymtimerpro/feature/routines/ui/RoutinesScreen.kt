@@ -174,7 +174,9 @@ fun RoutinesScreen(
 ) {
     if (uiState.classificationManagerOpen) {
         ClassificationManagerDialog(
-            uiState = uiState,
+            classifications = uiState.classifications,
+            searchQuery = uiState.classificationSearchQuery,
+            draft = uiState.classificationDraft,
             onClose = onCloseClassificationManager,
             onSearchChanged = onClassificationSearchQueryChanged,
             onStartCreate = onStartCreateClassification,
@@ -568,8 +570,10 @@ private fun RoutineRow(
 }
 
 @Composable
-private fun ClassificationManagerDialog(
-    uiState: RoutinesUiState,
+internal fun ClassificationManagerDialog(
+    classifications: List<com.alejandroestevemaza.gymtimerpro.core.model.RoutineClassification>,
+    searchQuery: String,
+    draft: ClassificationDraft?,
     onClose: () -> Unit,
     onSearchChanged: (String) -> Unit,
     onStartCreate: () -> Unit,
@@ -580,7 +584,7 @@ private fun ClassificationManagerDialog(
     onDelete: (String) -> Unit,
 ) {
     var pendingDeleteClassificationId by remember { mutableStateOf<String?>(null) }
-    val pendingDeleteClassification = uiState.classifications.firstOrNull { classification ->
+    val pendingDeleteClassification = classifications.firstOrNull { classification ->
         classification.id == pendingDeleteClassificationId
     }
     if (pendingDeleteClassification != null) {
@@ -706,7 +710,7 @@ private fun ClassificationManagerDialog(
                                 modifier = Modifier.size(GymTheme.spacing.s20),
                             )
                             TextField(
-                                value = uiState.classificationSearchQuery,
+                                value = searchQuery,
                                 onValueChange = onSearchChanged,
                                 modifier = Modifier.weight(1f),
                                 textStyle = GymTheme.type.subheadlineRegular,
@@ -727,7 +731,7 @@ private fun ClassificationManagerDialog(
                                 singleLine = true,
                             )
                             if (GymTheme.animationsEnabled) {
-                                AnimatedVisibility(visible = uiState.classificationSearchQuery.isNotBlank()) {
+                                AnimatedVisibility(visible = searchQuery.isNotBlank()) {
                                     IconButton(
                                         onClick = { onSearchChanged("") },
                                         modifier = Modifier.size(40.dp),
@@ -740,7 +744,7 @@ private fun ClassificationManagerDialog(
                                         )
                                     }
                                 }
-                            } else if (uiState.classificationSearchQuery.isNotBlank()) {
+                            } else if (searchQuery.isNotBlank()) {
                                 IconButton(
                                     onClick = { onSearchChanged("") },
                                     modifier = Modifier.size(40.dp),
@@ -754,7 +758,7 @@ private fun ClassificationManagerDialog(
                                 }
                             }
                             if (GymTheme.animationsEnabled) {
-                                AnimatedVisibility(visible = uiState.classificationDraft == null) {
+                                AnimatedVisibility(visible = draft == null) {
                                     IconButton(onClick = onStartCreate) {
                                         Box(
                                             modifier = Modifier
@@ -774,7 +778,7 @@ private fun ClassificationManagerDialog(
                                         }
                                     }
                                 }
-                            } else if (uiState.classificationDraft == null) {
+                            } else if (draft == null) {
                                 IconButton(onClick = onStartCreate) {
                                     Box(
                                         modifier = Modifier
@@ -798,11 +802,11 @@ private fun ClassificationManagerDialog(
 
                         // ── Sección de creación / renombrado ─────────────
                         AnimatedVisibility(
-                            visible = uiState.classificationDraft != null,
+                            visible = draft != null,
                             enter = if (GymTheme.animationsEnabled) fadeIn() + expandVertically() else EnterTransition.None,
                             exit = if (GymTheme.animationsEnabled) fadeOut() + shrinkVertically() else ExitTransition.None,
                         ) {
-                            uiState.classificationDraft?.let { draft ->
+                            draft?.let { draft ->
                                 Surface(
                                     modifier = Modifier.fillMaxWidth(),
                                     shape = RoundedCornerShape(12.dp),
@@ -886,9 +890,9 @@ private fun ClassificationManagerDialog(
                         }
 
                         // ── Lista agrupada estilo iOS ─────────────────────
-                        val filteredClassifications = uiState.classifications.filter { classification ->
-                            uiState.classificationSearchQuery.isBlank() || classification.name.contains(
-                                uiState.classificationSearchQuery,
+                        val filteredClassifications = classifications.filter { classification ->
+                            searchQuery.isBlank() || classification.name.contains(
+                                searchQuery,
                                 ignoreCase = true,
                             )
                         }

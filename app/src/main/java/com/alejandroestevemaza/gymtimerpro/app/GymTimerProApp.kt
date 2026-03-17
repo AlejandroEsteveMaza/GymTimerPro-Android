@@ -1,5 +1,10 @@
 package com.alejandroestevemaza.gymtimerpro.app
 
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -37,6 +42,9 @@ import com.alejandroestevemaza.gymtimerpro.feature.paywall.model.PaywallInfoLeve
 import com.alejandroestevemaza.gymtimerpro.feature.paywall.model.PaywallPresentationContext
 import com.alejandroestevemaza.gymtimerpro.feature.paywall.model.PaywallPresentationRequest
 import com.alejandroestevemaza.gymtimerpro.feature.paywall.ui.PaywallDialog
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.alejandroestevemaza.gymtimerpro.feature.routines.ui.ClassificationManagerDialog
+import com.alejandroestevemaza.gymtimerpro.feature.routines.ui.ClassificationsViewModel
 import com.alejandroestevemaza.gymtimerpro.feature.routines.ui.RoutinesRoute
 import com.alejandroestevemaza.gymtimerpro.feature.settings.ui.SettingsScreen
 import com.alejandroestevemaza.gymtimerpro.feature.training.ui.TrainingRoute
@@ -66,6 +74,10 @@ fun GymTimerProApp(
     val dailyUsage = remember(rawDailyUsage) {
         normalizedDailyUsage(rawDailyUsage)
     }
+    val classificationsViewModel: ClassificationsViewModel = viewModel(
+        factory = ClassificationsViewModel.factory(appContainer.routinesRepository)
+    )
+    val classificationsUiState by classificationsViewModel.uiState.collectAsStateWithLifecycle()
 
     val energySavingActive = isEnergySavingActive(settings.energySavingMode)
 
@@ -76,6 +88,21 @@ fun GymTimerProApp(
                 appContainer = appContainer,
                 request = request,
                 onDismiss = { paywallRequest = null },
+            )
+        }
+        if (classificationsUiState.isOpen) {
+            ClassificationManagerDialog(
+                classifications = classificationsUiState.classifications,
+                searchQuery = classificationsUiState.searchQuery,
+                draft = classificationsUiState.draft,
+                onClose = classificationsViewModel::closeManager,
+                onSearchChanged = classificationsViewModel::onSearchQueryChanged,
+                onStartCreate = classificationsViewModel::onStartCreate,
+                onStartRename = classificationsViewModel::onStartRename,
+                onDraftChanged = classificationsViewModel::onDraftChanged,
+                onCancelDraft = classificationsViewModel::onCancelDraft,
+                onSaveDraft = classificationsViewModel::onSaveDraft,
+                onDelete = classificationsViewModel::onDelete,
             )
         }
 
@@ -101,6 +128,18 @@ fun GymTimerProApp(
                 navController = navController,
                 startDestination = AppTab.Training.route,
                 modifier = Modifier.padding(innerPadding),
+                enterTransition = {
+                    fadeIn(animationSpec = tween(durationMillis = 180))
+                },
+                exitTransition = {
+                    fadeOut(animationSpec = tween(durationMillis = 140))
+                },
+                popEnterTransition = {
+                    fadeIn(animationSpec = tween(durationMillis = 180))
+                },
+                popExitTransition = {
+                    fadeOut(animationSpec = tween(durationMillis = 140))
+                },
             ) {
                 composable(AppTab.Training.route) {
                     TrainingRoute(
@@ -192,6 +231,7 @@ fun GymTimerProApp(
                                     appContainer.appSettingsRepository.setEnergySavingMode(value)
                                 }
                             },
+                            onManageClassifications = classificationsViewModel::openManager,
                         )
                     }
                 }
