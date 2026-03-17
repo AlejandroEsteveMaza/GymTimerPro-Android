@@ -76,6 +76,11 @@
     <string name="progress_period_month">Month</string>
     <string name="progress_period_quarter">Quarter</string>
     <string name="progress_period_year">Year</string>
+    <string name="progress_period_week_short">1W</string>
+    <string name="progress_period_fortnight_short">2W</string>
+    <string name="progress_period_month_short">1M</string>
+    <string name="progress_period_quarter_short">3M</string>
+    <string name="progress_period_year_short">1Y</string>
     <string name="progress_badge_first_workout_title">First workout</string>
     <string name="progress_badge_first_workout_subtitle">Complete your first recorded workout.</string>
     <string name="progress_badge_workouts_5_title">5 workouts</string>

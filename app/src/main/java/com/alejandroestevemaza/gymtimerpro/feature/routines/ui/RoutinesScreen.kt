@@ -46,7 +46,9 @@ import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.Timer
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FilledIconButton
@@ -227,6 +229,13 @@ fun RoutinesScreen(
             }
         }
 
+        if (!uiState.isEmptyState || uiState.searchQuery.isNotBlank()) {
+            RoutinesSearchBar(
+                query = uiState.searchQuery,
+                onQueryChange = onSearchQueryChanged,
+            )
+        }
+
         if (uiState.isEmptyState) {
             Column(
                 modifier = Modifier
@@ -271,6 +280,9 @@ fun RoutinesScreen(
                 val unclassifiedSection = uiState.groupedSections.firstOrNull { section ->
                     section.id == RoutinesUiState.UNCLASSIFIED_SECTION_ID
                 }
+                val matchingRoutinesSection = uiState.groupedSections.firstOrNull { section ->
+                    section.id == RoutinesUiState.MATCHING_ROUTINES_SECTION_ID
+                }
 
                 if (classificationSections.isNotEmpty()) {
                     item {
@@ -285,6 +297,23 @@ fun RoutinesScreen(
                             sections = classificationSections,
                             uiState = uiState,
                             onToggleSection = onToggleSection,
+                            onEditRoutine = onEditRoutine,
+                        )
+                    }
+                }
+
+                if (matchingRoutinesSection != null) {
+                    item {
+                        Text(
+                            text = stringResource(R.string.routines_matching_routines),
+                            style = GymTheme.type.captionRegular,
+                            color = GymTheme.colors.textSecondary,
+                        )
+                    }
+                    item {
+                        RoutineRowsCard(
+                            routines = matchingRoutinesSection.routines,
+                            uiState = uiState,
                             onEditRoutine = onEditRoutine,
                         )
                     }
@@ -312,6 +341,66 @@ fun RoutinesScreen(
 }
 
 @Composable
+private fun RoutinesSearchBar(
+    query: String,
+    onQueryChange: (String) -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(
+                color = GymTheme.colors.secondaryButtonFill,
+                shape = RoundedCornerShape(GymTheme.radii.r12),
+            )
+            .padding(horizontal = GymTheme.spacing.s12, vertical = GymTheme.spacing.s8),
+        horizontalArrangement = Arrangement.spacedBy(GymTheme.spacing.s8),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(
+            imageVector = Icons.Rounded.Search,
+            contentDescription = null,
+            tint = GymTheme.colors.textSecondary,
+            modifier = Modifier.size(GymTheme.layout.icon18),
+        )
+        TextField(
+            value = query,
+            onValueChange = onQueryChange,
+            modifier = Modifier.weight(1f),
+            textStyle = GymTheme.type.subheadlineRegular,
+            placeholder = {
+                Text(
+                    text = stringResource(R.string.routines_search_hint),
+                    style = GymTheme.type.subheadlineRegular,
+                    color = GymTheme.colors.textSecondary,
+                )
+            },
+            colors = TextFieldDefaults.colors(
+                focusedContainerColor = Color.Transparent,
+                unfocusedContainerColor = Color.Transparent,
+                disabledContainerColor = Color.Transparent,
+                focusedIndicatorColor = Color.Transparent,
+                unfocusedIndicatorColor = Color.Transparent,
+                disabledIndicatorColor = Color.Transparent,
+            ),
+            singleLine = true,
+        )
+        AnimatedVisibility(visible = query.isNotBlank()) {
+            IconButton(
+                onClick = { onQueryChange("") },
+                modifier = Modifier.size(40.dp),
+            ) {
+                Icon(
+                    imageVector = Icons.Rounded.Close,
+                    contentDescription = stringResource(R.string.routines_cancel),
+                    tint = GymTheme.colors.textSecondary,
+                    modifier = Modifier.size(GymTheme.layout.icon18),
+                )
+            }
+        }
+    }
+}
+
+@Composable
 private fun ClassificationSectionsCard(
     sections: List<RoutineCatalogSection>,
     uiState: RoutinesUiState,
@@ -324,23 +413,71 @@ private fun ClassificationSectionsCard(
     ) {
         Column(
             modifier = Modifier.padding(GymTheme.spacing.s16),
-            verticalArrangement = Arrangement.spacedBy(GymTheme.spacing.s6),
+            verticalArrangement = Arrangement.spacedBy(GymTheme.spacing.s8),
         ) {
             sections.forEachIndexed { index, section ->
-                // Header de la sección (clickable para expandir/colapsar)
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .heightIn(min = GymTheme.layout.minTapHeight)
+                        .background(
+                            color = GymTheme.colors.secondaryButtonFill,
+                            shape = RoundedCornerShape(GymTheme.radii.r12),
+                        )
                         .clickable { onToggleSection(section.id) },
-                    horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Text(
-                        text = section.title,
-                        style = GymTheme.type.headlineRegular,
-                        color = GymTheme.colors.textPrimary,
-                    )
+                    Row(
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(
+                                start = GymTheme.spacing.s10,
+                                end = GymTheme.spacing.s6,
+                                top = GymTheme.spacing.s8,
+                                bottom = GymTheme.spacing.s8,
+                            ),
+                        horizontalArrangement = Arrangement.spacedBy(GymTheme.spacing.s10),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(GymTheme.layout.configIconFrame)
+                                .background(
+                                    color = GymTheme.colors.iconBackground,
+                                    shape = RoundedCornerShape(GymTheme.radii.r8),
+                                ),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.Layers,
+                                contentDescription = null,
+                                tint = GymTheme.colors.iconTint,
+                                modifier = Modifier.size(GymTheme.layout.configIconGlyph),
+                            )
+                        }
+                        Text(
+                            text = section.title,
+                            style = GymTheme.type.subheadlineSemibold,
+                            color = GymTheme.colors.textPrimary,
+                            modifier = Modifier.weight(1f),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                        Text(
+                            text = section.routines.size.toString(),
+                            style = GymTheme.type.captionSemibold,
+                            color = GymTheme.colors.textSecondary,
+                            modifier = Modifier
+                                .background(
+                                    color = GymTheme.colors.cardBackground,
+                                    shape = RoundedCornerShape(GymTheme.radii.capsule),
+                                )
+                                .padding(
+                                    horizontal = GymTheme.spacing.s8,
+                                    vertical = GymTheme.spacing.s4,
+                                ),
+                        )
+                    }
                     Icon(
                         imageVector = if (section.isExpanded) {
                             Icons.Rounded.ExpandMore
@@ -349,10 +486,10 @@ private fun ClassificationSectionsCard(
                         },
                         contentDescription = null,
                         tint = GymTheme.colors.textSecondary,
+                        modifier = Modifier.padding(end = GymTheme.spacing.s12),
                     )
                 }
 
-                // Rutinas de la sección (visibles solo cuando está expandida)
                 if (section.isExpanded) {
                     if (section.routines.isEmpty()) {
                         Text(
@@ -360,7 +497,8 @@ private fun ClassificationSectionsCard(
                             style = GymTheme.type.subheadlineRegular,
                             color = GymTheme.colors.textSecondary,
                             modifier = Modifier.padding(
-                                start = GymTheme.spacing.s8,
+                                start = GymTheme.spacing.s16,
+                                top = GymTheme.spacing.s4,
                                 bottom = GymTheme.spacing.s8,
                             ),
                         )
@@ -368,12 +506,12 @@ private fun ClassificationSectionsCard(
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(bottom = GymTheme.spacing.s8),
-                            verticalArrangement = Arrangement.spacedBy(GymTheme.spacing.s4),
+                                .padding(start = GymTheme.spacing.s16),
+                            verticalArrangement = Arrangement.spacedBy(GymTheme.spacing.s8),
                         ) {
-                            section.routines.forEachIndexed { routineIndex, routine ->
-                                HorizontalDivider(color = GymTheme.colors.divider)
+                            section.routines.forEach { routine ->
                                 RoutineListRow(
+                                    modifier = Modifier.fillMaxWidth(),
                                     routine = routine,
                                     uiState = uiState,
                                     onEditRoutine = onEditRoutine,
@@ -437,6 +575,7 @@ private fun RoutineRowsCard(
             } else {
                 routines.forEachIndexed { index, routine ->
                     RoutineListRow(
+                        modifier = Modifier.fillMaxWidth(),
                         routine = routine,
                         uiState = uiState,
                         onEditRoutine = onEditRoutine,
@@ -452,36 +591,72 @@ private fun RoutineRowsCard(
 
 @Composable
 private fun RoutineListRow(
+    modifier: Modifier = Modifier,
     routine: com.alejandroestevemaza.gymtimerpro.core.model.Routine,
     uiState: RoutinesUiState,
     onEditRoutine: (String) -> Unit,
 ) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
+    Surface(
+        modifier = modifier
             .heightIn(min = GymTheme.layout.minTapHeight)
             .clickable { onEditRoutine(routine.id) },
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically,
+        shape = RoundedCornerShape(GymTheme.radii.r12),
+        color = GymTheme.colors.metricBackground,
+        border = BorderStroke(
+            width = GymTheme.borders.card,
+            color = GymTheme.colors.divider.copy(alpha = 0.65f),
+        ),
     ) {
-        RoutineRowItem(
-            modifier = Modifier.weight(1f),
-            name = routine.name,
-            summary = formatRoutineSummary(
-                totalSets = routine.totalSets,
-                reps = routine.reps,
-                restSeconds = routine.restSeconds,
-                weightKg = routine.weightKg,
-                timerDisplayFormat = uiState.settings.timerDisplayFormat,
-                weightUnitPreference = uiState.settings.weightUnitPreference,
-            ),
-        )
-        Icon(
-            imageVector = Icons.Rounded.ChevronRight,
-            contentDescription = null,
-            tint = GymTheme.colors.textSecondary,
-            modifier = Modifier.padding(start = GymTheme.spacing.s8),
-        )
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = GymTheme.spacing.s10, vertical = GymTheme.spacing.s8),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Row(
+                modifier = Modifier.weight(1f),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(GymTheme.layout.configIconFrame)
+                        .background(
+                            color = GymTheme.colors.iconBackground,
+                            shape = RoundedCornerShape(GymTheme.radii.r8),
+                        ),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.FitnessCenter,
+                        contentDescription = null,
+                        tint = GymTheme.colors.iconTint,
+                        modifier = Modifier.size(GymTheme.layout.configIconGlyph),
+                    )
+                }
+                RoutineRowItem(
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(start = GymTheme.spacing.s10),
+                    name = routine.name,
+                    summary = formatRoutineSummary(
+                        totalSets = routine.totalSets,
+                        reps = routine.reps,
+                        restSeconds = routine.restSeconds,
+                        weightKg = routine.weightKg,
+                        timerDisplayFormat = uiState.settings.timerDisplayFormat,
+                        weightUnitPreference = uiState.settings.weightUnitPreference,
+                    ),
+                )
+            }
+            Icon(
+                imageVector = Icons.Rounded.ChevronRight,
+                contentDescription = null,
+                tint = GymTheme.colors.textSecondary,
+                modifier = Modifier.padding(start = GymTheme.spacing.s8),
+            )
+        }
     }
 }
 
@@ -626,11 +801,12 @@ private fun ClassificationManagerDialog(
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
+                            .heightIn(min = GymTheme.layout.minTapHeight)
                             .padding(
-                                start = GymTheme.spacing.s16,
-                                end = GymTheme.spacing.s4,
-                                top = GymTheme.spacing.s16,
-                                bottom = GymTheme.spacing.s16,
+                                start = GymTheme.spacing.s12,
+                                end = GymTheme.spacing.s8,
+                                top = GymTheme.spacing.s8,
+                                bottom = GymTheme.spacing.s8,
                             ),
                         contentAlignment = Alignment.Center,
                     ) {
@@ -639,14 +815,17 @@ private fun ClassificationManagerDialog(
                             style = GymTheme.type.subheadlineSemibold,
                             color = GymTheme.colors.textPrimary,
                         )
-                        TextButton(
+                        IconButton(
                             onClick = onClose,
-                            modifier = Modifier.align(Alignment.CenterEnd),
+                            modifier = Modifier
+                                .align(Alignment.CenterEnd)
+                                .size(GymTheme.layout.minTapHeight),
                         ) {
-                            Text(
-                                text = stringResource(R.string.routines_done),
-                                style = GymTheme.type.subheadlineSemibold,
-                                color = GymTheme.colors.iconTint,
+                            Icon(
+                                imageVector = Icons.Rounded.Close,
+                                contentDescription = stringResource(R.string.routines_cancel),
+                                tint = GymTheme.colors.iconTint,
+                                modifier = Modifier.size(GymTheme.layout.icon18),
                             )
                         }
                     }
@@ -1405,27 +1584,15 @@ private fun RoutineEditorContent(
                 }
             }
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(GymTheme.spacing.s12),
-            ) {
-                OutlinedButton(
-                    onClick = onDismiss,
-                    modifier = Modifier.weight(1f),
-                ) {
-                    Text(text = stringResource(R.string.routines_cancel))
-                }
-                Button(
-                    onClick = onSave,
-                    modifier = Modifier.weight(1f),
-                ) {
-                    Text(text = stringResource(R.string.routines_save))
-                }
-            }
-
             if (editorState.isEditMode) {
-                Row(horizontalArrangement = Arrangement.spacedBy(GymTheme.spacing.s8)) {
-                    OutlinedButton(onClick = onApplyOrRemoveFromTraining) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(GymTheme.spacing.s12),
+                ) {
+                    OutlinedButton(
+                        onClick = onApplyOrRemoveFromTraining,
+                        modifier = Modifier.weight(1f),
+                    ) {
                         Icon(
                             imageVector = if (editorState.isAppliedToTraining) {
                                 Icons.Rounded.Close
@@ -1443,11 +1610,39 @@ private fun RoutineEditorContent(
                             }
                         )
                     }
-                    OutlinedButton(onClick = onDeleteRoutine) {
+                    OutlinedButton(
+                        onClick = onDeleteRoutine,
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            contentColor = MaterialTheme.colorScheme.error,
+                        ),
+                        border = BorderStroke(
+                            width = ButtonDefaults.outlinedButtonBorder(true).width,
+                            color = MaterialTheme.colorScheme.error,
+                        ),
+                    ) {
                         Icon(imageVector = Icons.Rounded.Delete, contentDescription = null)
                         Spacer(modifier = Modifier.size(GymTheme.spacing.s8))
                         Text(text = stringResource(R.string.routines_delete))
                     }
+                }
+            }
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(GymTheme.spacing.s12),
+            ) {
+                OutlinedButton(
+                    onClick = onDismiss,
+                    modifier = Modifier.weight(1f),
+                ) {
+                    Text(text = stringResource(R.string.routines_cancel))
+                }
+                Button(
+                    onClick = onSave,
+                    modifier = Modifier.weight(1f),
+                ) {
+                    Text(text = stringResource(R.string.routines_save))
                 }
             }
         }
@@ -1495,11 +1690,12 @@ private fun RoutineClassificationPickerDialog(
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
+                            .heightIn(min = GymTheme.layout.minTapHeight)
                             .padding(
-                                start = GymTheme.spacing.s16,
-                                end = GymTheme.spacing.s4,
-                                top = GymTheme.spacing.s16,
-                                bottom = GymTheme.spacing.s16,
+                                start = GymTheme.spacing.s12,
+                                end = GymTheme.spacing.s8,
+                                top = GymTheme.spacing.s8,
+                                bottom = GymTheme.spacing.s8,
                             ),
                         contentAlignment = Alignment.Center,
                     ) {
@@ -1508,14 +1704,17 @@ private fun RoutineClassificationPickerDialog(
                             style = GymTheme.type.subheadlineSemibold,
                             color = GymTheme.colors.textPrimary,
                         )
-                        TextButton(
+                        IconButton(
                             onClick = onDismiss,
-                            modifier = Modifier.align(Alignment.CenterEnd),
+                            modifier = Modifier
+                                .align(Alignment.CenterEnd)
+                                .size(GymTheme.layout.minTapHeight),
                         ) {
-                            Text(
-                                text = stringResource(R.string.routines_done),
-                                style = GymTheme.type.subheadlineSemibold,
-                                color = GymTheme.colors.iconTint,
+                            Icon(
+                                imageVector = Icons.Rounded.Close,
+                                contentDescription = stringResource(R.string.routines_cancel),
+                                tint = GymTheme.colors.iconTint,
+                                modifier = Modifier.size(GymTheme.layout.icon18),
                             )
                         }
                     }

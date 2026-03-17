@@ -8,6 +8,7 @@ import androidx.room.Transaction
 import com.alejandroestevemaza.gymtimerpro.data.local.entity.RoutineClassificationCrossRefEntity
 import com.alejandroestevemaza.gymtimerpro.data.local.entity.RoutineClassificationEntity
 import com.alejandroestevemaza.gymtimerpro.data.local.entity.RoutineEntity
+
 import com.alejandroestevemaza.gymtimerpro.data.local.model.RoutineWithClassifications
 import kotlinx.coroutines.flow.Flow
 
@@ -50,19 +51,16 @@ interface RoutineDao {
     @Transaction
     suspend fun upsertRoutineWithClassifications(
         routine: RoutineEntity,
-        classifications: List<RoutineClassificationEntity>,
+        classificationIds: List<String>,
     ) {
         upsertRoutine(routine)
-        if (classifications.isNotEmpty()) {
-            upsertClassifications(classifications)
-        }
         deleteCrossRefsForRoutine(routine.id)
-        if (classifications.isNotEmpty()) {
+        if (classificationIds.isNotEmpty()) {
             upsertRoutineClassificationCrossRefs(
-                classifications.map { classification ->
+                classificationIds.map { classificationId ->
                     RoutineClassificationCrossRefEntity(
                         routineId = routine.id,
-                        classificationId = classification.id,
+                        classificationId = classificationId,
                     )
                 }
             )

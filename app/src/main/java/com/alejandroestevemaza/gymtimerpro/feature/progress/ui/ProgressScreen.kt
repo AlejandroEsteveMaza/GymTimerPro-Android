@@ -4,7 +4,6 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -31,7 +30,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.BarChart
 import androidx.compose.material.icons.rounded.CalendarMonth
 import androidx.compose.material.icons.rounded.FitnessCenter
-import androidx.compose.material.icons.rounded.ExpandMore
 import androidx.compose.material.icons.rounded.History
 import androidx.compose.material.icons.rounded.LocalFireDepartment
 import androidx.compose.material.icons.rounded.LocalOffer
@@ -46,6 +44,9 @@ import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -173,6 +174,7 @@ fun ProgressScreen(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ChartsCard(
     selectedPeriod: ProgressPeriod,
@@ -196,33 +198,25 @@ private fun ChartsCard(
                 .padding(GymTheme.spacing.s14),
             verticalArrangement = Arrangement.spacedBy(GymTheme.spacing.s14),
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    text = stringResource(R.string.progress_workouts_over_time_title),
-                    style = GymTheme.type.headlineSemibold,
-                    color = GymTheme.colors.textPrimary,
-                )
-                Row(
-                    modifier = Modifier.clickable {
-                        onSelectPeriod(selectedPeriod.next())
-                    },
-                    horizontalArrangement = Arrangement.spacedBy(GymTheme.spacing.s2),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(
-                        text = stringResource(selectedPeriod.labelRes()),
-                        style = GymTheme.type.subheadlineRegular,
-                        color = GymTheme.colors.iconTint,
-                    )
-                    Icon(
-                        imageVector = Icons.Rounded.ExpandMore,
-                        contentDescription = null,
-                        tint = GymTheme.colors.iconTint,
-                        modifier = Modifier.size(GymTheme.spacing.s16),
+            Text(
+                text = stringResource(R.string.progress_workouts_over_time_title),
+                style = GymTheme.type.headlineSemibold,
+                color = GymTheme.colors.textPrimary,
+            )
+
+            SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+                ProgressPeriod.entries.forEachIndexed { index, period ->
+                    SegmentedButton(
+                        selected = period == selectedPeriod,
+                        onClick = { onSelectPeriod(period) },
+                        shape = SegmentedButtonDefaults.itemShape(
+                            index = index,
+                            count = ProgressPeriod.entries.size,
+                        ),
+                        icon = {},
+                        label = {
+                            Text(text = stringResource(period.shortLabelRes()))
+                        },
                     )
                 }
             }
@@ -979,18 +973,20 @@ private fun DayDetailInlineOverlay(
     }
 }
 
-private fun ProgressPeriod.next(): ProgressPeriod {
-    val values = ProgressPeriod.entries
-    val currentIndex = values.indexOf(this)
-    return values[(currentIndex + 1) % values.size]
-}
-
 private fun ProgressPeriod.labelRes(): Int = when (this) {
     ProgressPeriod.Week -> R.string.progress_period_week
     ProgressPeriod.Fortnight -> R.string.progress_period_fortnight
     ProgressPeriod.Month -> R.string.progress_period_month
     ProgressPeriod.Quarter -> R.string.progress_period_quarter
     ProgressPeriod.Year -> R.string.progress_period_year
+}
+
+private fun ProgressPeriod.shortLabelRes(): Int = when (this) {
+    ProgressPeriod.Week -> R.string.progress_period_week_short
+    ProgressPeriod.Fortnight -> R.string.progress_period_fortnight_short
+    ProgressPeriod.Month -> R.string.progress_period_month_short
+    ProgressPeriod.Quarter -> R.string.progress_period_quarter_short
+    ProgressPeriod.Year -> R.string.progress_period_year_short
 }
 
 private fun ProgressBadgeId.titleRes(): Int = when (this) {

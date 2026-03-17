@@ -35,7 +35,7 @@ class DefaultRoutinesRepository(
     override suspend fun upsertRoutine(routine: Routine) {
         routineDao.upsertRoutineWithClassifications(
             routine = routine.toEntity(),
-            classifications = routine.classifications.map { it.toEntity() },
+            classificationIds = routine.classifications.map { it.id },
         )
     }
 

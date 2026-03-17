@@ -8,11 +8,11 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.background
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -24,11 +24,14 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.ChevronRight
@@ -42,6 +45,7 @@ import androidx.compose.material.icons.rounded.Tune
 import androidx.compose.material.icons.rounded.Verified
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.material3.Button
@@ -68,6 +72,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -463,9 +468,31 @@ private fun RoutinePickerDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(text = stringResource(R.string.training_select_routine)) },
+        title = {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(text = stringResource(R.string.training_select_routine))
+                IconButton(
+                    onClick = onDismiss,
+                    modifier = Modifier.size(GymTheme.layout.minTapHeight),
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.Close,
+                        contentDescription = stringResource(R.string.routines_cancel),
+                        tint = GymTheme.colors.iconTint,
+                        modifier = Modifier.size(GymTheme.layout.icon18),
+                    )
+                }
+            }
+        },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(GymTheme.spacing.s12)) {
+            Column(
+                modifier = Modifier,
+                verticalArrangement = Arrangement.spacedBy(GymTheme.spacing.s12),
+            ) {
                 OutlinedTextField(
                     value = pickerState.searchQuery,
                     onValueChange = onSearchQueryChanged,
@@ -484,12 +511,6 @@ private fun RoutinePickerDialog(
                     },
                     singleLine = true,
                 )
-
-                if (pickerState.appliedRoutineId != null) {
-                    OutlinedButton(onClick = onClearAppliedRoutine) {
-                        Text(text = stringResource(R.string.training_remove_routine))
-                    }
-                }
 
                 if (pickerState.groupedSections.isEmpty()) {
                     Text(
@@ -515,13 +536,31 @@ private fun RoutinePickerDialog(
                         }
                     }
                 }
+
+                if (pickerState.appliedRoutineId != null) {
+                    OutlinedButton(
+                        onClick = onClearAppliedRoutine,
+                        modifier = Modifier.fillMaxWidth(),
+                        border = BorderStroke(
+                            width = GymTheme.borders.card,
+                            color = GymTheme.colors.error.copy(alpha = 0.45f),
+                        ),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            contentColor = GymTheme.colors.error,
+                        ),
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.Close,
+                            contentDescription = null,
+                            modifier = Modifier.size(GymTheme.layout.icon18),
+                        )
+                        Spacer(modifier = Modifier.width(GymTheme.spacing.s8))
+                        Text(text = stringResource(R.string.training_remove_routine))
+                    }
+                }
             }
         },
-        confirmButton = {
-            TextButton(onClick = onDismiss) {
-                Text(text = stringResource(R.string.routines_cancel))
-            }
-        },
+        confirmButton = {},
     )
 }
 
@@ -563,26 +602,97 @@ private fun PickerSectionCard(
             }
 
             if (pickerState.isSearchMode || section.isExpanded) {
-                FlowRow(
-                    horizontalArrangement = Arrangement.spacedBy(GymTheme.spacing.s8),
-                    verticalArrangement = Arrangement.spacedBy(GymTheme.spacing.s8),
-                ) {
+                Column(verticalArrangement = Arrangement.spacedBy(GymTheme.spacing.s8)) {
                     section.routines.forEach { routine ->
-                        OutlinedButton(onClick = { onApplyRoutine(routine.id) }) {
-                            Column(horizontalAlignment = Alignment.Start) {
-                                Text(text = routine.name)
-                                Text(
-                                    text = formatRoutineSummary(
-                                        totalSets = routine.totalSets,
-                                        reps = routine.reps,
-                                        restSeconds = routine.restSeconds,
-                                        weightKg = routine.weightKg,
-                                        timerDisplayFormat = settings.timerDisplayFormat,
-                                        weightUnitPreference = settings.weightUnitPreference,
+                        val isApplied = pickerState.appliedRoutineId == routine.id
+                        Surface(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { onApplyRoutine(routine.id) },
+                            shape = RoundedCornerShape(GymTheme.radii.r12),
+                            color = if (isApplied) {
+                                GymTheme.colors.iconBackground
+                            } else {
+                                GymTheme.colors.secondaryButtonFill
+                            },
+                            border = BorderStroke(
+                                width = GymTheme.borders.card,
+                                color = if (isApplied) {
+                                    GymTheme.colors.iconTint.copy(alpha = 0.45f)
+                                } else {
+                                    GymTheme.colors.secondaryButtonBorder
+                                },
+                            ),
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(
+                                        horizontal = GymTheme.spacing.s12,
+                                        vertical = GymTheme.spacing.s10,
                                     ),
-                                    style = GymTheme.type.footnoteRegular,
-                                    color = GymTheme.colors.textSecondary,
-                                )
+                                horizontalArrangement = Arrangement.spacedBy(GymTheme.spacing.s10),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(GymTheme.layout.configIconFrame)
+                                        .background(
+                                            color = GymTheme.colors.cardBackground,
+                                            shape = RoundedCornerShape(GymTheme.radii.r8),
+                                        ),
+                                    contentAlignment = Alignment.Center,
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Rounded.FitnessCenter,
+                                        contentDescription = null,
+                                        tint = GymTheme.colors.iconTint,
+                                        modifier = Modifier.size(GymTheme.layout.configIconGlyph),
+                                    )
+                                }
+                                Column(
+                                    modifier = Modifier.weight(1f),
+                                    verticalArrangement = Arrangement.spacedBy(GymTheme.spacing.s2),
+                                ) {
+                                    Text(
+                                        text = routine.name,
+                                        style = GymTheme.type.subheadlineSemibold,
+                                        color = GymTheme.colors.textPrimary,
+                                    )
+                                    Text(
+                                        text = formatRoutineSummary(
+                                            totalSets = routine.totalSets,
+                                            reps = routine.reps,
+                                            restSeconds = routine.restSeconds,
+                                            weightKg = routine.weightKg,
+                                            timerDisplayFormat = settings.timerDisplayFormat,
+                                            weightUnitPreference = settings.weightUnitPreference,
+                                        ),
+                                        style = GymTheme.type.footnoteRegular,
+                                        color = GymTheme.colors.textSecondary,
+                                        maxLines = 2,
+                                    )
+                                }
+                                Box(
+                                    modifier = Modifier
+                                        .size(GymTheme.layout.configIconFrame)
+                                        .background(
+                                            color = if (isApplied) {
+                                                GymTheme.colors.iconTint.copy(alpha = 0.16f)
+                                            } else {
+                                                GymTheme.colors.cardBackground
+                                            },
+                                            shape = RoundedCornerShape(GymTheme.radii.r8),
+                                        ),
+                                    contentAlignment = Alignment.Center,
+                                ) {
+                                    Icon(
+                                        imageVector = if (isApplied) Icons.Rounded.Check else Icons.Rounded.Add,
+                                        contentDescription = null,
+                                        tint = if (isApplied) GymTheme.colors.iconTint else GymTheme.colors.textSecondary,
+                                        modifier = Modifier.size(GymTheme.layout.icon18),
+                                    )
+                                }
                             }
                         }
                     }
