@@ -1,6 +1,12 @@
 package com.alejandroestevemaza.gymtimerpro.feature.routines.ui
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -720,7 +726,21 @@ private fun ClassificationManagerDialog(
                                 ),
                                 singleLine = true,
                             )
-                            AnimatedVisibility(visible = uiState.classificationSearchQuery.isNotBlank()) {
+                            if (GymTheme.animationsEnabled) {
+                                AnimatedVisibility(visible = uiState.classificationSearchQuery.isNotBlank()) {
+                                    IconButton(
+                                        onClick = { onSearchChanged("") },
+                                        modifier = Modifier.size(40.dp),
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Rounded.Close,
+                                            contentDescription = stringResource(R.string.routines_cancel),
+                                            tint = GymTheme.colors.textSecondary,
+                                            modifier = Modifier.size(18.dp),
+                                        )
+                                    }
+                                }
+                            } else if (uiState.classificationSearchQuery.isNotBlank()) {
                                 IconButton(
                                     onClick = { onSearchChanged("") },
                                     modifier = Modifier.size(40.dp),
@@ -733,7 +753,28 @@ private fun ClassificationManagerDialog(
                                     )
                                 }
                             }
-                            AnimatedVisibility(visible = uiState.classificationDraft == null) {
+                            if (GymTheme.animationsEnabled) {
+                                AnimatedVisibility(visible = uiState.classificationDraft == null) {
+                                    IconButton(onClick = onStartCreate) {
+                                        Box(
+                                            modifier = Modifier
+                                                .size(28.dp)
+                                                .background(
+                                                    color = GymTheme.colors.iconTint,
+                                                    shape = CircleShape,
+                                                ),
+                                            contentAlignment = Alignment.Center,
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Rounded.Add,
+                                                contentDescription = null,
+                                                tint = Color.White,
+                                                modifier = Modifier.size(18.dp),
+                                            )
+                                        }
+                                    }
+                                }
+                            } else if (uiState.classificationDraft == null) {
                                 IconButton(onClick = onStartCreate) {
                                     Box(
                                         modifier = Modifier
@@ -756,7 +797,11 @@ private fun ClassificationManagerDialog(
                         }
 
                         // ── Sección de creación / renombrado ─────────────
-                        AnimatedVisibility(visible = uiState.classificationDraft != null) {
+                        AnimatedVisibility(
+                            visible = uiState.classificationDraft != null,
+                            enter = if (GymTheme.animationsEnabled) fadeIn() + expandVertically() else EnterTransition.None,
+                            exit = if (GymTheme.animationsEnabled) fadeOut() + shrinkVertically() else ExitTransition.None,
+                        ) {
                             uiState.classificationDraft?.let { draft ->
                                 Surface(
                                     modifier = Modifier.fillMaxWidth(),
@@ -1607,7 +1652,21 @@ private fun RoutineClassificationPickerDialog(
                                 ),
                                 singleLine = true,
                             )
-                            AnimatedVisibility(visible = searchQuery.isNotBlank()) {
+                            if (GymTheme.animationsEnabled) {
+                                AnimatedVisibility(visible = searchQuery.isNotBlank()) {
+                                    IconButton(
+                                        onClick = { onSearchQueryChanged("") },
+                                        modifier = Modifier.size(40.dp),
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Rounded.Close,
+                                            contentDescription = stringResource(R.string.routines_cancel),
+                                            tint = GymTheme.colors.textSecondary,
+                                            modifier = Modifier.size(18.dp),
+                                        )
+                                    }
+                                }
+                            } else if (searchQuery.isNotBlank()) {
                                 IconButton(
                                     onClick = { onSearchQueryChanged("") },
                                     modifier = Modifier.size(40.dp),

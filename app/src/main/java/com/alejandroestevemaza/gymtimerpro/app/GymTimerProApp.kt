@@ -4,15 +4,21 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
+import android.content.Context
+import android.os.PowerManager
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.alejandroestevemaza.gymtimerpro.core.designsystem.theme.LocalEnergySavingActive
+import com.alejandroestevemaza.gymtimerpro.core.model.EnergySavingMode
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -61,7 +67,10 @@ fun GymTimerProApp(
         normalizedDailyUsage(rawDailyUsage)
     }
 
+    val energySavingActive = isEnergySavingActive(settings.energySavingMode)
+
     GymTimerProTheme {
+        CompositionLocalProvider(LocalEnergySavingActive provides energySavingActive) {
         paywallRequest?.let { request ->
             PaywallDialog(
                 appContainer = appContainer,
@@ -188,6 +197,7 @@ fun GymTimerProApp(
                 }
             }
         }
+        }
     }
 }
 
@@ -208,6 +218,17 @@ private fun PremiumFeatureGate(
         onUnlock = onUnlock,
         content = content,
     )
+}
+
+@Composable
+private fun isEnergySavingActive(mode: EnergySavingMode): Boolean = when (mode) {
+    EnergySavingMode.On -> true
+    EnergySavingMode.Off -> false
+    EnergySavingMode.Automatic -> {
+        val context = LocalContext.current
+        val powerManager = context.getSystemService(Context.POWER_SERVICE) as PowerManager
+        powerManager.isPowerSaveMode
+    }
 }
 
 private fun normalizedDailyUsage(

@@ -14,6 +14,7 @@ private val LocalGymBorders = staticCompositionLocalOf { GymBorders() }
 private val LocalGymElevation = staticCompositionLocalOf { GymElevation() }
 private val LocalGymLayout = staticCompositionLocalOf { GymLayout() }
 private val LocalGymType = staticCompositionLocalOf { GymTypeStyles }
+val LocalEnergySavingActive = staticCompositionLocalOf { false }
 
 object GymTheme {
     val colors: GymColors
@@ -50,6 +51,11 @@ object GymTheme {
         @Composable
         @ReadOnlyComposable
         get() = LocalGymType.current
+
+    val animationsEnabled: Boolean
+        @Composable
+        @ReadOnlyComposable
+        get() = !LocalEnergySavingActive.current
 }
 
 @Composable

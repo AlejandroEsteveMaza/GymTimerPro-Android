@@ -119,8 +119,14 @@ class ProgressCalculator(
             period = selectedPeriod,
             totalWorkouts = filteredCompletions.size,
             activeDays = activeDays,
-            mostRepeatedRoutineName = topRoutineName(filteredCompletions),
-            topClassificationName = topClassificationName(filteredCompletions),
+            mostRepeatedRoutineName = prioritizedTopRoutineName(
+                periodCompletions = filteredCompletions,
+                allCompletions = completions,
+            ),
+            topClassificationName = prioritizedTopClassificationName(
+                periodCompletions = filteredCompletions,
+                allCompletions = completions,
+            ),
             buckets = buckets,
         )
     }
@@ -209,8 +215,33 @@ class ProgressCalculator(
         }
     }
 
-    private fun topRoutineName(filteredCompletions: List<WorkoutCompletion>): String? = filteredCompletions
-        .groupingBy { completion -> completion.displayRoutineName() }
+    private fun prioritizedTopRoutineName(
+        periodCompletions: List<WorkoutCompletion>,
+        allCompletions: List<WorkoutCompletion>,
+    ): String? {
+        // Priority order: non-quick in period, any in period, non-quick all-time, any all-time.
+        return pickTopRoutineName(periodCompletions, excludeQuickWorkout = true)
+            ?: pickTopRoutineName(periodCompletions, excludeQuickWorkout = false)
+            ?: pickTopRoutineName(allCompletions, excludeQuickWorkout = true)
+            ?: pickTopRoutineName(allCompletions, excludeQuickWorkout = false)
+    }
+
+    private fun prioritizedTopClassificationName(
+        periodCompletions: List<WorkoutCompletion>,
+        allCompletions: List<WorkoutCompletion>,
+    ): String? {
+        // Priority order: period first, then all-time to avoid "None yet" when historical data exists.
+        return pickTopClassificationName(periodCompletions)
+            ?: pickTopClassificationName(allCompletions)
+    }
+
+    private fun pickTopRoutineName(
+        completions: List<WorkoutCompletion>,
+        excludeQuickWorkout: Boolean,
+    ): String? = completions
+        .map { completion -> completion.displayRoutineName() }
+        .filter { routineName -> !excludeQuickWorkout || routineName != quickWorkoutLabel }
+        .groupingBy { it }
         .eachCount()
         .entries
         .sortedWith(
@@ -220,7 +251,7 @@ class ProgressCalculator(
         .firstOrNull()
         ?.key
 
-    private fun topClassificationName(filteredCompletions: List<WorkoutCompletion>): String? = filteredCompletions
+    private fun pickTopClassificationName(completions: List<WorkoutCompletion>): String? = completions
         .mapNotNull { completion -> completion.classificationNameSnapshot?.takeIf { it.isNotBlank() } }
         .groupingBy { it }
         .eachCount()

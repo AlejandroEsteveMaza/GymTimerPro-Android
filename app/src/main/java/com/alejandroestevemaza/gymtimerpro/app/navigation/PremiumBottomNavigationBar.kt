@@ -28,6 +28,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -115,23 +116,36 @@ private fun PremiumBottomNavigationItem(
     val colors = GymTheme.colors
     val layout = GymTheme.layout
     val type = GymTheme.type
+    val animationsEnabled = GymTheme.animationsEnabled
 
-    val contentColor = animateColorAsState(
-        targetValue = if (selected) colors.iconTint else colors.textSecondary,
-        label = "BottomNavContentColor",
-    )
-    val activeIndicatorColor = animateColorAsState(
-        targetValue = if (selected) colors.bottomNavActivePill else Color.Transparent,
-        label = "BottomNavIndicatorColor",
-    )
-    val contentScale = animateFloatAsState(
-        targetValue = if (selected) 1f else 0.95f,
-        animationSpec = spring(
-            stiffness = Spring.StiffnessMedium,
-            dampingRatio = Spring.DampingRatioNoBouncy,
-        ),
-        label = "BottomNavItemScale",
-    )
+    val contentColor = if (animationsEnabled) {
+        animateColorAsState(
+            targetValue = if (selected) colors.iconTint else colors.textSecondary,
+            label = "BottomNavContentColor",
+        )
+    } else {
+        rememberUpdatedState(if (selected) colors.iconTint else colors.textSecondary)
+    }
+    val activeIndicatorColor = if (animationsEnabled) {
+        animateColorAsState(
+            targetValue = if (selected) colors.bottomNavActivePill else Color.Transparent,
+            label = "BottomNavIndicatorColor",
+        )
+    } else {
+        rememberUpdatedState(if (selected) colors.bottomNavActivePill else Color.Transparent)
+    }
+    val contentScale = if (animationsEnabled) {
+        animateFloatAsState(
+            targetValue = if (selected) 1f else 0.95f,
+            animationSpec = spring(
+                stiffness = Spring.StiffnessMedium,
+                dampingRatio = Spring.DampingRatioNoBouncy,
+            ),
+            label = "BottomNavItemScale",
+        )
+    } else {
+        rememberUpdatedState(if (selected) 1f else 0.95f)
+    }
 
     Box(
         modifier = modifier

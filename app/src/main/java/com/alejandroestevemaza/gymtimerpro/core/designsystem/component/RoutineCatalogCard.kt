@@ -79,7 +79,21 @@ fun RoutineCatalogSearchBar(
             ),
             singleLine = true,
         )
-        AnimatedVisibility(visible = query.isNotBlank()) {
+        if (GymTheme.animationsEnabled) {
+            AnimatedVisibility(visible = query.isNotBlank()) {
+                IconButton(
+                    onClick = { onQueryChange("") },
+                    modifier = Modifier.size(40.dp),
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.Close,
+                        contentDescription = null,
+                        tint = GymTheme.colors.textSecondary,
+                        modifier = Modifier.size(GymTheme.layout.icon18),
+                    )
+                }
+            }
+        } else if (query.isNotBlank()) {
             IconButton(
                 onClick = { onQueryChange("") },
                 modifier = Modifier.size(40.dp),

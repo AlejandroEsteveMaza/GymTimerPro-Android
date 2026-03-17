@@ -52,6 +52,7 @@ import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.FitnessCenter
 import androidx.compose.material.icons.rounded.Layers
+import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material.icons.rounded.Remove
 import androidx.compose.material.icons.rounded.RestartAlt
 import androidx.compose.material.icons.rounded.Timer
@@ -276,6 +277,10 @@ fun TrainingScreen(
                 text = stringResource(R.string.app_shell_start_rest),
                 onClick = onStartRest,
                 state = if (uiState.startRestEnabled) GymComponentState.Normal else GymComponentState.Disabled,
+                leadingIcon = Icons.Rounded.Pause,
+                leadingIconInCircle = true,
+                uppercaseText = true,
+                boldText = true,
                 modifier = Modifier
                     .padding(
                         start = GymTheme.spacing.s20,
@@ -690,34 +695,42 @@ private fun TrainingProgressCard(
             }
         },
     ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .animateContentSize(
-                    animationSpec = spring(
-                        stiffness = Spring.StiffnessLow,
-                        dampingRatio = Spring.DampingRatioNoBouncy,
+        if (GymTheme.animationsEnabled) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .animateContentSize(
+                        animationSpec = spring(
+                            stiffness = Spring.StiffnessLow,
+                            dampingRatio = Spring.DampingRatioNoBouncy,
+                        ),
                     ),
-                ),
-        ) {
-            AnimatedContent(
-                targetState = isCompleted,
-                transitionSpec = {
-                    (
-                        fadeIn(animationSpec = tween(durationMillis = 220, delayMillis = 40)) +
-                            expandVertically(animationSpec = spring(stiffness = Spring.StiffnessLow))
-                        ) togetherWith (
-                        fadeOut(animationSpec = tween(durationMillis = 140)) +
-                            shrinkVertically(animationSpec = tween(durationMillis = 180))
-                        ) using SizeTransform(clip = false)
-                },
-                label = "TrainingProgressCompletionTransition",
-            ) { completed ->
-                if (completed) {
-                    WorkoutCompletedBanner()
-                } else {
-                    TrainingProgressLiveContent(uiState = uiState)
+            ) {
+                AnimatedContent(
+                    targetState = isCompleted,
+                    transitionSpec = {
+                        (
+                            fadeIn(animationSpec = tween(durationMillis = 220, delayMillis = 40)) +
+                                expandVertically(animationSpec = spring(stiffness = Spring.StiffnessLow))
+                            ) togetherWith (
+                            fadeOut(animationSpec = tween(durationMillis = 140)) +
+                                shrinkVertically(animationSpec = tween(durationMillis = 180))
+                            ) using SizeTransform(clip = false)
+                    },
+                    label = "TrainingProgressCompletionTransition",
+                ) { completed ->
+                    if (completed) {
+                        WorkoutCompletedBanner()
+                    } else {
+                        TrainingProgressLiveContent(uiState = uiState)
+                    }
                 }
+            }
+        } else {
+            if (isCompleted) {
+                WorkoutCompletedBanner()
+            } else {
+                TrainingProgressLiveContent(uiState = uiState)
             }
         }
     }
@@ -869,6 +882,7 @@ private fun TrainingProgressLiveContent(
                             displayFormat = uiState.settings.timerDisplayFormat,
                         ),
                         color = GymTheme.colors.resting,
+                        animate = GymTheme.animationsEnabled,
                     )
                 }
             }
@@ -880,7 +894,16 @@ private fun TrainingProgressLiveContent(
 private fun AnimatedTimerText(
     text: String,
     color: androidx.compose.ui.graphics.Color,
+    animate: Boolean = true,
 ) {
+    if (!animate) {
+        Text(
+            text = text,
+            style = GymTheme.type.numericTimer,
+            color = color,
+        )
+        return
+    }
     Row(verticalAlignment = Alignment.CenterVertically) {
         text.forEachIndexed { index, char ->
             androidx.compose.runtime.key(index) {
@@ -970,3 +993,5 @@ private fun ProStatusChip(
         )
     }
 }
+
+
