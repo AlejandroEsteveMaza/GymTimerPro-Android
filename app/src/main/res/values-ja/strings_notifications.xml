@@ -1,0 +1,9 @@
+<resources>
+    <string name="notification_rest_finished_title">休憩終了</string>
+    <string name="notification_rest_finished_body_format">セット %1$d/%2$d</string>
+    <string name="live_activity_mode_resting">休憩</string>
+    <string name="live_activity_mode_training">トレーニング</string>
+    <string name="live_activity_set_progress_expanded_format">%1$d/%2$d セット</string>
+    <string name="live_activity_set_progress_compact_format">%1$d/%2$d</string>
+    <string name="app_name_fallback">GymTimerPro</string>
+</resources>

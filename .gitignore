@@ -1,15 +1,47 @@
-*.iml
-.gradle
-/local.properties
-/.idea/caches
-/.idea/libraries
-/.idea/modules.xml
-/.idea/workspace.xml
-/.idea/navEditor.xml
-/.idea/assetWizardSettings.xml
-.DS_Store
-/build
-/captures
-.externalNativeBuild
-.cxx
+# Gradle
+.gradle/
+build/
+**/build/
+
+# Local SDK/environment config
 local.properties
+
+# Kotlin Gradle plugin
+.kotlin/
+
+# Logs and crash dumps
+*.log
+*.hprof
+hs_err_pid*
+replay_pid*
+
+# macOS
+.DS_Store
+
+# Android Studio / IntelliJ
+*.iml
+*.iws
+.idea/
+out/
+
+# Android generated artifacts
+captures/
+.externalNativeBuild/
+.cxx/
+.navigation/
+*.apk
+*.aab
+output-metadata.json
+
+# Signing keys
+*.jks
+*.keystore
+
+# Firebase / Google services
+google-services.json
+
+# Legacy Crashlytics / Fabric
+com_crashlytics_export_strings.xml
+crashlytics.properties
+crashlytics-build.properties
+fabric.properties
