@@ -71,6 +71,11 @@ fun SettingsScreen(
             color = GymTheme.colors.textPrimary,
         )
 
+        SettingsNavigationRow(
+            label = stringResource(R.string.routines_manage_classifications),
+            onClick = onManageClassifications,
+        )
+
         SettingsMenuSection(
             title = stringResource(R.string.settings_section_weight_unit),
             rowLabel = stringResource(R.string.settings_section_weight_unit),
@@ -125,11 +130,6 @@ fun SettingsScreen(
             text = stringResource(R.string.settings_energy_description),
             style = GymTheme.type.footnoteRegular,
             color = GymTheme.colors.textSecondary,
-        )
-
-        SettingsNavigationRow(
-            label = stringResource(R.string.routines_manage_classifications),
-            onClick = onManageClassifications,
         )
     }
 }

@@ -38,7 +38,7 @@
     <string name="settings_energy_off">Off</string>
     <string name="settings_energy_automatic">Automatic</string>
     <string name="settings_energy_on">On</string>
-    <string name="settings_energy_description">Off keeps current behavior. Automatic follows iOS Low Power Mode. On allows reduced timer wakeups, and disables haptics at rest end.</string>
+    <string name="settings_energy_description">Off keeps all animations active. Automatic activates when battery drops below 20%. On always reduces animations and visual effects.</string>
     <string name="training_config_title">Configuration</string>
     <string name="training_progress_title">Progress</string>
     <string name="training_routine_label">Routine</string>

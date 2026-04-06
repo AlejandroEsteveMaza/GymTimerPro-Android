@@ -37,6 +37,7 @@ import androidx.compose.material.icons.automirrored.rounded.FormatListBulleted
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.ContentCopy
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.Edit
@@ -138,6 +139,7 @@ fun RoutinesRoute(
         onToggleClassification = routinesViewModel::onToggleClassification,
         onSaveEditor = routinesViewModel::onSaveEditor,
         onDeleteRoutine = routinesViewModel::onDeleteRoutine,
+        onDuplicateRoutine = routinesViewModel::onDuplicateRoutine,
         onApplyOrRemoveFromTraining = routinesViewModel::onApplyOrRemoveFromTraining,
     )
 }
@@ -169,6 +171,7 @@ fun RoutinesScreen(
     onToggleClassification: (String) -> Unit,
     onSaveEditor: () -> Unit,
     onDeleteRoutine: () -> Unit,
+    onDuplicateRoutine: (String) -> Unit,
     onApplyOrRemoveFromTraining: () -> Unit,
     previewShowEditorInline: Boolean = false,
 ) {
@@ -204,6 +207,7 @@ fun RoutinesScreen(
                 onToggleClassification = onToggleClassification,
                 onSave = onSaveEditor,
                 onDeleteRoutine = onDeleteRoutine,
+                onDuplicateRoutine = onDuplicateRoutine,
                 onApplyOrRemoveFromTraining = onApplyOrRemoveFromTraining,
             )
         }
@@ -1002,6 +1006,7 @@ private fun RoutineEditorDialog(
     onToggleClassification: (String) -> Unit,
     onSave: () -> Unit,
     onDeleteRoutine: () -> Unit,
+    onDuplicateRoutine: (String) -> Unit,
     onApplyOrRemoveFromTraining: () -> Unit,
 ) {
     var showDeleteDialog by remember { mutableStateOf(false) }
@@ -1078,6 +1083,7 @@ private fun RoutineEditorDialog(
             onOpenClassificationPicker = { showClassificationPicker = true },
             onSave = onSave,
             onDeleteRoutine = { showDeleteDialog = true },
+            onDuplicateRoutine = onDuplicateRoutine,
             onApplyOrRemoveFromTraining = onApplyOrRemoveFromTraining,
         )
         } // Box
@@ -1302,6 +1308,7 @@ private fun RoutineEditorContent(
     onOpenClassificationPicker: () -> Unit,
     onSave: () -> Unit,
     onDeleteRoutine: () -> Unit,
+    onDuplicateRoutine: (String) -> Unit,
     onApplyOrRemoveFromTraining: () -> Unit,
 ) {
     Card(
@@ -1471,6 +1478,10 @@ private fun RoutineEditorContent(
             }
 
             if (editorState.isEditMode) {
+                val duplicateName = stringResource(
+                    R.string.routines_copy_suffix_format,
+                    editorState.name.trim(),
+                )
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(GymTheme.spacing.s12),
@@ -1497,20 +1508,29 @@ private fun RoutineEditorContent(
                         )
                     }
                     OutlinedButton(
-                        onClick = onDeleteRoutine,
+                        onClick = { onDuplicateRoutine(duplicateName) },
                         modifier = Modifier.weight(1f),
-                        colors = ButtonDefaults.outlinedButtonColors(
-                            contentColor = MaterialTheme.colorScheme.error,
-                        ),
-                        border = BorderStroke(
-                            width = ButtonDefaults.outlinedButtonBorder(true).width,
-                            color = MaterialTheme.colorScheme.error,
-                        ),
                     ) {
-                        Icon(imageVector = Icons.Rounded.Delete, contentDescription = null)
+                        Icon(imageVector = Icons.Rounded.ContentCopy, contentDescription = null)
                         Spacer(modifier = Modifier.size(GymTheme.spacing.s8))
-                        Text(text = stringResource(R.string.routines_delete))
+                        Text(text = stringResource(R.string.routines_duplicate))
                     }
+                }
+
+                OutlinedButton(
+                    onClick = onDeleteRoutine,
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = MaterialTheme.colorScheme.error,
+                    ),
+                    border = BorderStroke(
+                        width = ButtonDefaults.outlinedButtonBorder(true).width,
+                        color = MaterialTheme.colorScheme.error,
+                    ),
+                ) {
+                    Icon(imageVector = Icons.Rounded.Delete, contentDescription = null)
+                    Spacer(modifier = Modifier.size(GymTheme.spacing.s8))
+                    Text(text = stringResource(R.string.routines_delete))
                 }
             }
 

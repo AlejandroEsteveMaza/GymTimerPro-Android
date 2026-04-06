@@ -9,8 +9,12 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
+import android.content.BroadcastReceiver
 import android.content.Context
-import android.os.PowerManager
+import android.content.Intent
+import android.content.IntentFilter
+import android.os.BatteryManager
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
@@ -129,16 +133,20 @@ fun GymTimerProApp(
                 startDestination = AppTab.Training.route,
                 modifier = Modifier.padding(innerPadding),
                 enterTransition = {
-                    fadeIn(animationSpec = tween(durationMillis = 180))
+                    if (energySavingActive) EnterTransition.None
+                    else fadeIn(animationSpec = tween(durationMillis = 180))
                 },
                 exitTransition = {
-                    fadeOut(animationSpec = tween(durationMillis = 140))
+                    if (energySavingActive) ExitTransition.None
+                    else fadeOut(animationSpec = tween(durationMillis = 140))
                 },
                 popEnterTransition = {
-                    fadeIn(animationSpec = tween(durationMillis = 180))
+                    if (energySavingActive) EnterTransition.None
+                    else fadeIn(animationSpec = tween(durationMillis = 180))
                 },
                 popExitTransition = {
-                    fadeOut(animationSpec = tween(durationMillis = 140))
+                    if (energySavingActive) ExitTransition.None
+                    else fadeOut(animationSpec = tween(durationMillis = 140))
                 },
             ) {
                 composable(AppTab.Training.route) {
@@ -261,15 +269,38 @@ private fun PremiumFeatureGate(
 }
 
 @Composable
-private fun isEnergySavingActive(mode: EnergySavingMode): Boolean = when (mode) {
-    EnergySavingMode.On -> true
-    EnergySavingMode.Off -> false
-    EnergySavingMode.Automatic -> {
-        val context = LocalContext.current
-        val powerManager = context.getSystemService(Context.POWER_SERVICE) as PowerManager
-        powerManager.isPowerSaveMode
+private fun isEnergySavingActive(mode: EnergySavingMode): Boolean {
+    val context = LocalContext.current
+    val initialBatteryLow = remember(mode, context) {
+        if (mode != EnergySavingMode.Automatic) return@remember false
+        val intent = context.registerReceiver(null, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
+        isBatteryLow(intent)
+    }
+    val isLowBattery by produceState(initialValue = initialBatteryLow, mode) {
+        if (mode == EnergySavingMode.Automatic) {
+            val receiver = object : BroadcastReceiver() {
+                override fun onReceive(ctx: Context, intent: Intent) {
+                    value = isBatteryLow(intent)
+                }
+            }
+            context.registerReceiver(receiver, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
+            awaitDispose { context.unregisterReceiver(receiver) }
+        }
+    }
+    return when (mode) {
+        EnergySavingMode.On -> true
+        EnergySavingMode.Off -> false
+        EnergySavingMode.Automatic -> isLowBattery
     }
 }
+
+private fun isBatteryLow(intent: Intent?): Boolean {
+    val level = intent?.getIntExtra(BatteryManager.EXTRA_LEVEL, -1) ?: return false
+    val scale = intent.getIntExtra(BatteryManager.EXTRA_SCALE, -1)
+    return level >= 0 && scale > 0 && (level * 100 / scale) < BATTERY_LOW_THRESHOLD
+}
+
+private const val BATTERY_LOW_THRESHOLD = 20
 
 private fun normalizedDailyUsage(
     current: DailyUsageState,

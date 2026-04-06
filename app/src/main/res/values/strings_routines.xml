@@ -1,0 +1,4 @@
+<resources>
+    <string name="routines_duplicate">Duplicate</string>
+    <string name="routines_copy_suffix_format">%1$s (Copy)</string>
+</resources>

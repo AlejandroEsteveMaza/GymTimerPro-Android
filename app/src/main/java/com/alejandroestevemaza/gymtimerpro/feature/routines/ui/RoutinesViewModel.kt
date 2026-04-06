@@ -277,6 +277,22 @@ class RoutinesViewModel(
         }
     }
 
+    fun onDuplicateRoutine(copyName: String) {
+        val draft = editorState.value ?: return
+        val sanitizedName = copyName.trim().take(50).ifBlank { draft.name.trim().take(50) }
+        val duplicated = draft.copy(
+            routineId = null,
+            name = sanitizedName,
+            nameCount = sanitizedName.length,
+            isAppliedToTraining = false,
+            nameValidationRequested = false,
+        )
+        viewModelScope.launch {
+            persistEditorDraft(duplicated)
+            onDismissEditor()
+        }
+    }
+
     fun onApplyOrRemoveFromTraining() {
         val draft = editorState.value ?: return
         val routineId = draft.routineId ?: return

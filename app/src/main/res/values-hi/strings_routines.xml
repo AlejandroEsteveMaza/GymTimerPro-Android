@@ -1,0 +1,4 @@
+<resources>
+    <string name="routines_duplicate">डुप्लिकेट</string>
+    <string name="routines_copy_suffix_format">%1$s (प्रति)</string>
+</resources>

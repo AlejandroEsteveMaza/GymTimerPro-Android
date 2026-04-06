@@ -88,16 +88,19 @@ class AndroidRestNotificationCoordinator(
     ) {
         if (!canPostNotifications()) return
 
+        val modeLabel = appContext.getString(R.string.live_activity_mode_resting)
+        val progressText = appContext.getString(
+            R.string.live_activity_set_progress_expanded_format,
+            currentSet,
+            totalSets,
+        )
+        val expandedText = "$progressText • ${resolveAppName()}"
+
         val notification = NotificationCompat.Builder(appContext, CHANNEL_REST_LIVE)
             .setSmallIcon(android.R.drawable.ic_lock_idle_alarm)
-            .setContentTitle(appContext.getString(R.string.live_activity_mode_resting))
-            .setContentText(
-                appContext.getString(
-                    R.string.live_activity_set_progress_expanded_format,
-                    currentSet,
-                    totalSets,
-                )
-            )
+            .setContentTitle(modeLabel)
+            .setContentText(progressText)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(expandedText))
             .setSubText(resolveAppName())
             .setOngoing(true)
             .setOnlyAlertOnce(true)
@@ -105,6 +108,8 @@ class AndroidRestNotificationCoordinator(
             .setCategory(NotificationCompat.CATEGORY_PROGRESS)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setPriority(NotificationCompat.PRIORITY_LOW)
+            .setColor(ContextCompat.getColor(appContext, R.color.gymtimer_seed_primary))
+            .setColorized(true)
             .setUsesChronometer(true)
             .setChronometerCountDown(true)
             .setWhen(endEpochMillis)
