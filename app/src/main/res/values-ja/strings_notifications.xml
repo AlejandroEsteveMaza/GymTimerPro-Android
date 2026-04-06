@@ -1,4 +1,5 @@
 <resources>
+    <string name="notification_rest_live_title">休憩</string>
     <string name="notification_rest_finished_title">休憩終了</string>
     <string name="notification_rest_finished_body_format">セット %1$d/%2$d</string>
     <string name="live_activity_mode_training">トレーニング</string>

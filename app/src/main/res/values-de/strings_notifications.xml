@@ -1,4 +1,5 @@
 <resources>
+    <string name="notification_rest_live_title">Pause</string>
     <string name="notification_rest_finished_title">Pause beendet</string>
     <string name="notification_rest_finished_body_format">Satz %1$d/%2$d</string>
     <string name="live_activity_mode_training">Training</string>

@@ -97,18 +97,15 @@ class AndroidRestNotificationCoordinator(
 
         val safeTotalSets = totalSets.coerceAtLeast(1)
         val safeCurrentSet = currentSet.coerceIn(0, safeTotalSets)
-        val progressText = "$safeCurrentSet/$safeTotalSets"
         val remainingMillis = (endEpochMillis - System.currentTimeMillis()).coerceAtLeast(0L)
         val baseElapsed = SystemClock.elapsedRealtime() + remainingMillis
         val contentView = buildLiveRestContentView(
             baseElapsed = baseElapsed,
-            progressText = progressText,
             currentSet = safeCurrentSet,
             totalSets = safeTotalSets,
         )
         val bigContentView = buildLiveRestContentView(
             baseElapsed = baseElapsed,
-            progressText = progressText,
             currentSet = safeCurrentSet,
             totalSets = safeTotalSets,
         )
@@ -298,20 +295,21 @@ class AndroidRestNotificationCoordinator(
 
     private fun buildLiveRestContentView(
         baseElapsed: Long,
-        progressText: String,
         currentSet: Int,
         totalSets: Int,
     ): RemoteViews {
+        val setProgressText = appContext.getString(
+            R.string.live_activity_set_progress_expanded_format,
+            currentSet,
+            totalSets,
+        )
         return RemoteViews(appContext.packageName, R.layout.notification_rest_timer).apply {
-            setTextViewText(R.id.rest_timer_progress, progressText)
+            setTextViewText(R.id.rest_timer_title, appContext.getString(R.string.notification_rest_live_title))
+            setTextViewText(R.id.rest_timer_app_name, appContext.getString(R.string.app_name))
+            setTextViewText(R.id.rest_timer_progress, setProgressText)
             setChronometer(R.id.rest_timer_chrono, baseElapsed, null, true)
             setChronometerCountDown(R.id.rest_timer_chrono, true)
-            setProgressBar(
-                R.id.rest_timer_series_progress,
-                totalSets,
-                currentSet,
-                false,
-            )
+            setProgressBar(R.id.rest_timer_series_progress, totalSets, currentSet, false)
         }
     }
 

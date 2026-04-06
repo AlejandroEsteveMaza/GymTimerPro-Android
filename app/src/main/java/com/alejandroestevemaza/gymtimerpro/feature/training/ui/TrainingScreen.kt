@@ -150,12 +150,7 @@ fun TrainingRoute(
         )
     }
     var soundTipDismissed by remember {
-        val prefs = context.getSharedPreferences(PERMISSION_PREFS_NAME, Context.MODE_PRIVATE)
-        val count = prefs.getInt(KEY_SOUND_TIP_SESSION_COUNT, 0)
-        if (count < SOUND_TIP_MAX_SESSIONS) {
-            prefs.edit().putInt(KEY_SOUND_TIP_SESSION_COUNT, count + 1).apply()
-        }
-        mutableStateOf(count >= SOUND_TIP_MAX_SESSIONS)
+        mutableStateOf(!shouldShowSoundTipToday(context))
     }
     val permissionRequestLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission(),
@@ -246,8 +241,9 @@ fun TrainingRoute(
 
 private const val PERMISSION_PREFS_NAME = "gymtimerpro.permissions"
 private const val KEY_POST_NOTIFICATIONS_REQUESTED = "post_notifications.requested"
-private const val KEY_SOUND_TIP_SESSION_COUNT = "sound_tip.session_count"
-private const val SOUND_TIP_MAX_SESSIONS = 3
+private const val KEY_SOUND_TIP_LAST_DATE = "sound_tip.last_date"
+private const val KEY_SOUND_TIP_DISTINCT_DAYS = "sound_tip.distinct_days"
+private const val SOUND_TIP_MAX_DAYS = 3
 
 
 @Composable
@@ -1148,4 +1144,18 @@ private fun NotificationsDisabledBanner() {
             )
         }
     }
+}
+
+private fun shouldShowSoundTipToday(context: Context): Boolean {
+    val prefs = context.getSharedPreferences(PERMISSION_PREFS_NAME, Context.MODE_PRIVATE)
+    val distinctDays = prefs.getInt(KEY_SOUND_TIP_DISTINCT_DAYS, 0)
+    if (distinctDays >= SOUND_TIP_MAX_DAYS) return false
+    val today = java.time.LocalDate.now().toString()
+    if (prefs.getString(KEY_SOUND_TIP_LAST_DATE, null) == today) return false
+    prefs.edit()
+        .putString(KEY_SOUND_TIP_LAST_DATE, today)
+        .putInt(KEY_SOUND_TIP_DISTINCT_DAYS, distinctDays + 1)
+        .apply()
+    return true
+}
 }
