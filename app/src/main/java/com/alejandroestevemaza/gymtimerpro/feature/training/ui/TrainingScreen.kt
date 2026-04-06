@@ -1148,13 +1148,28 @@ private fun NotificationsDisabledBanner() {
 
 private fun shouldShowSoundTipToday(context: Context): Boolean {
     val prefs = context.getSharedPreferences(PERMISSION_PREFS_NAME, Context.MODE_PRIVATE)
+    val today = java.time.LocalDate.now()
+    val todayStr = today.toString()
+    val lastDateStr = prefs.getString(KEY_SOUND_TIP_LAST_DATE, null)
+
+    if (lastDateStr == todayStr) return false
+
     val distinctDays = prefs.getInt(KEY_SOUND_TIP_DISTINCT_DAYS, 0)
-    if (distinctDays >= SOUND_TIP_MAX_DAYS) return false
-    val today = java.time.LocalDate.now().toString()
-    if (prefs.getString(KEY_SOUND_TIP_LAST_DATE, null) == today) return false
-    prefs.edit()
-        .putString(KEY_SOUND_TIP_LAST_DATE, today)
-        .putInt(KEY_SOUND_TIP_DISTINCT_DAYS, distinctDays + 1)
-        .apply()
-    return true
+
+    if (distinctDays < SOUND_TIP_MAX_DAYS) {
+        // Phase 1: once per distinct day for the first 4 days
+        prefs.edit()
+            .putString(KEY_SOUND_TIP_LAST_DATE, todayStr)
+            .putInt(KEY_SOUND_TIP_DISTINCT_DAYS, distinctDays + 1)
+            .apply()
+        return true
+    }
+
+    // Phase 2: once per week indefinitely
+    val lastDate = lastDateStr?.let { runCatching { java.time.LocalDate.parse(it) }.getOrNull() }
+    if (lastDate == null || java.time.temporal.ChronoUnit.DAYS.between(lastDate, today) >= 7) {
+        prefs.edit().putString(KEY_SOUND_TIP_LAST_DATE, todayStr).apply()
+        return true
+    }
+    return false
 }
