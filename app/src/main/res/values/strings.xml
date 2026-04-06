@@ -54,6 +54,11 @@
     <string name="training_completed_title">Workout completed</string>
     <string name="training_completed_body">A completion snapshot has been recorded. This state auto-resets after a short delay, matching the iOS flow.</string>
     <string name="training_reset">Reset</string>
+    <string name="training_sound_tip_title">Keep sound on</string>
+    <string name="training_sound_tip_body">Keep the app open and your device volume up so rest alerts work correctly.</string>
+    <string name="training_notifications_disabled">Notifications are disabled</string>
+    <string name="training_notifications_disabled_body">Rest alerts won\'t work. Enable notifications so you get reminded when your rest is over.</string>
+    <string name="training_notifications_enable">Enable</string>
     <string name="training_daily_limit_title">Daily limit reached</string>
     <string name="training_daily_limit_body">Free mode allows 16 successful rest starts per local day. Premium removes this limit and unlocks the other tabs.</string>
     <string name="training_daily_limit_dismiss">Dismiss</string>

@@ -15,7 +15,9 @@ import com.alejandroestevemaza.gymtimerpro.data.preferences.TrainingSessionRepos
 import com.alejandroestevemaza.gymtimerpro.data.repository.RoutinesRepository
 import com.alejandroestevemaza.gymtimerpro.data.repository.TrainingSessionCoordinator
 import com.alejandroestevemaza.gymtimerpro.data.repository.WorkoutCompletionRepository
+import com.alejandroestevemaza.gymtimerpro.feature.training.notifications.RestFinishedSoundPlayer
 import com.alejandroestevemaza.gymtimerpro.feature.training.notifications.RestNotificationCoordinator
+import com.alejandroestevemaza.gymtimerpro.core.util.AppForegroundState
 import java.time.Clock
 import java.time.Instant
 import java.time.ZoneId
@@ -38,6 +40,7 @@ class TrainingViewModel(
     private val trainingSessionCoordinator: TrainingSessionCoordinator,
     private val workoutCompletionRepository: WorkoutCompletionRepository,
     private val restNotificationCoordinator: RestNotificationCoordinator,
+    private val restFinishedSoundPlayer: RestFinishedSoundPlayer,
     private val clock: Clock,
     private val quickWorkoutLabel: String,
 ) : ViewModel() {
@@ -76,7 +79,7 @@ class TrainingViewModel(
             ) { settings, session -> settings to session }
                 .collect { (settings, session) ->
                     enforceTrainingConstraints(settings, session)
-                    synchronizeTimer(session)
+                    synchronizeTimer(settings, session)
                     synchronizeCompletionReset(session)
                 }
         }
@@ -287,7 +290,10 @@ class TrainingViewModel(
         }
     }
 
-    private fun synchronizeTimer(session: TrainingSessionState) {
+    private fun synchronizeTimer(
+        settings: AppSettings,
+        session: TrainingSessionState,
+    ) {
         val endEpochMillis = session.timerEndEpochMillis
         if (!session.timerIsRunning || endEpochMillis == null) {
             restNotificationCoordinator.syncRestState(session)
@@ -313,6 +319,9 @@ class TrainingViewModel(
                         currentSet = session.currentSet,
                         totalSets = session.totalSets,
                     )
+                    if (AppForegroundState.isForeground()) {
+                        restFinishedSoundPlayer.play(settings.energySavingMode)
+                    }
                     trainingSessionRepository.updateSession { current ->
                         current.copy(
                             timerIsRunning = false,
@@ -405,6 +414,11 @@ class TrainingViewModel(
         return ((diffMillis + 999L) / 1_000L).toInt()
     }
 
+    override fun onCleared() {
+        restFinishedSoundPlayer.release()
+        super.onCleared()
+    }
+
     companion object {
         fun factory(
             appSettingsRepository: AppSettingsRepository,
@@ -414,6 +428,7 @@ class TrainingViewModel(
             trainingSessionCoordinator: TrainingSessionCoordinator,
             workoutCompletionRepository: WorkoutCompletionRepository,
             restNotificationCoordinator: RestNotificationCoordinator,
+            restFinishedSoundPlayer: RestFinishedSoundPlayer,
             quickWorkoutLabel: String,
             clock: Clock = Clock.systemDefaultZone(),
         ): ViewModelProvider.Factory = object : ViewModelProvider.Factory {
@@ -427,6 +442,7 @@ class TrainingViewModel(
                     trainingSessionCoordinator = trainingSessionCoordinator,
                     workoutCompletionRepository = workoutCompletionRepository,
                     restNotificationCoordinator = restNotificationCoordinator,
+                    restFinishedSoundPlayer = restFinishedSoundPlayer,
                     clock = clock,
                     quickWorkoutLabel = quickWorkoutLabel,
                 ) as T
