@@ -75,7 +75,7 @@
     <string name="progress_summary_active_days">活跃天数</string>
     <string name="progress_summary_top_routine">最常用例程</string>
     <string name="progress_summary_top_classification">最常用分类</string>
-    <string name="progress_workouts_over_time_title">训练趋势</string>
+    <string name="progress_workouts_over_time_title">趋势</string>
     <string name="progress_summary_none">暂无</string>
     <string name="progress_period_week">周</string>
     <string name="progress_period_fortnight">两周</string>
