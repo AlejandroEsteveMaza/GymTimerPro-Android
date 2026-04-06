@@ -1158,4 +1158,3 @@ private fun shouldShowSoundTipToday(context: Context): Boolean {
         .apply()
     return true
 }
-}
