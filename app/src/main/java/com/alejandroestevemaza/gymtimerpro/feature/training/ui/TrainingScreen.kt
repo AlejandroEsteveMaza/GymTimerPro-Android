@@ -243,7 +243,7 @@ private const val PERMISSION_PREFS_NAME = "gymtimerpro.permissions"
 private const val KEY_POST_NOTIFICATIONS_REQUESTED = "post_notifications.requested"
 private const val KEY_SOUND_TIP_LAST_DATE = "sound_tip.last_date"
 private const val KEY_SOUND_TIP_DISTINCT_DAYS = "sound_tip.distinct_days"
-private const val SOUND_TIP_MAX_DAYS = 3
+private const val SOUND_TIP_MAX_DAYS = 4
 
 
 @Composable
