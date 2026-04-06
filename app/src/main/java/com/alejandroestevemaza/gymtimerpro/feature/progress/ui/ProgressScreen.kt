@@ -209,7 +209,7 @@ private fun ChartsCard(
             ) {
                 Text(
                     text = stringResource(R.string.progress_workouts_over_time_title),
-                    style = GymTheme.type.headlineSemibold,
+                    style = GymTheme.type.title2Bold,
                     color = GymTheme.colors.textPrimary,
                 )
                 Box {
