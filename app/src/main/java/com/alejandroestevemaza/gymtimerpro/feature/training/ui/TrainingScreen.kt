@@ -416,7 +416,7 @@ private fun TrainingConfigurationCard(
 
             NumericConfigRow(
                 icon = Icons.Rounded.Layers,
-                title = stringResource(R.string.training_sets_label),
+                title = stringResource(R.string.routines_sets_label),
                 valueText = uiState.session.totalSets.toString(),
                 value = uiState.session.totalSets,
                 valueRange = 1..uiState.settings.maxSetsPreference.maxSets,
@@ -428,7 +428,7 @@ private fun TrainingConfigurationCard(
 
             NumericConfigRow(
                 icon = Icons.Rounded.Timer,
-                title = stringResource(R.string.training_rest_label),
+                title = stringResource(R.string.routines_rest_label),
                 valueText = formatDuration(
                     totalSeconds = uiState.session.restSeconds,
                     displayFormat = uiState.settings.timerDisplayFormat,
@@ -888,7 +888,7 @@ private fun TrainingProgressLiveContent(
                         verticalArrangement = Arrangement.spacedBy(GymTheme.spacing.s6),
                     ) {
                         Text(
-                            text = stringResource(R.string.training_sets_label).uppercase(),
+                            text = stringResource(R.string.routines_sets_label).uppercase(),
                             style = GymTheme.type.captionRegular,
                             color = GymTheme.colors.textSecondary,
                         )
@@ -923,7 +923,7 @@ private fun TrainingProgressLiveContent(
                     verticalArrangement = Arrangement.spacedBy(GymTheme.spacing.s6),
                 ) {
                     Text(
-                        text = stringResource(R.string.training_sets_label).uppercase(),
+                        text = stringResource(R.string.routines_sets_label).uppercase(),
                         style = GymTheme.type.captionRegular,
                         color = GymTheme.colors.textSecondary,
                     )
@@ -982,7 +982,7 @@ private fun TrainingProgressLiveContent(
                     verticalArrangement = Arrangement.spacedBy(GymTheme.spacing.s6),
                 ) {
                     Text(
-                        text = stringResource(R.string.training_rest_label).uppercase(),
+                        text = stringResource(R.string.routines_rest_label).uppercase(),
                         style = GymTheme.type.captionRegular,
                         color = GymTheme.colors.textSecondary,
                     )

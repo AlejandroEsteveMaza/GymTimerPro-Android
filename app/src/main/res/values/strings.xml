@@ -44,8 +44,6 @@
     <string name="training_routine_label">Routine</string>
     <string name="training_routine_none">Quick workout</string>
     <string name="training_routine_reps">Reps: %1$d</string>
-    <string name="training_sets_label">Total sets</string>
-    <string name="training_rest_label">Rest time</string>
     <string name="training_state_training">Training</string>
     <string name="training_state_resting">Resting</string>
     <string name="training_state_completed">Completed</string>

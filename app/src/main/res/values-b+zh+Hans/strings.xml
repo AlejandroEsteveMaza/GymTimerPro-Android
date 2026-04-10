@@ -45,8 +45,6 @@
     <string name="training_routine_label">例程</string>
     <string name="training_routine_none">快速训练</string>
     <string name="training_routine_reps">次数：%1$d</string>
-    <string name="training_sets_label">总组数</string>
-    <string name="training_rest_label">休息时间</string>
     <string name="training_state_training">训练中</string>
     <string name="training_state_resting">休息中</string>
     <string name="training_state_completed">已完成</string>

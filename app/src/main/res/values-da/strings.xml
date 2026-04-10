@@ -45,8 +45,6 @@
     <string name="training_routine_label">Rutine</string>
     <string name="training_routine_none">Hurtig træning</string>
     <string name="training_routine_reps">Gent.: %1$d</string>
-    <string name="training_sets_label">Sæt i alt</string>
-    <string name="training_rest_label">Hviletid</string>
     <string name="training_state_training">Træner</string>
     <string name="training_state_resting">Hviler</string>
     <string name="training_state_completed">Afsluttet</string>

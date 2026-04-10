@@ -45,8 +45,6 @@
     <string name="training_routine_label">ルーティン</string>
     <string name="training_routine_none">クイックトレーニング</string>
     <string name="training_routine_reps">回数: %1$d</string>
-    <string name="training_sets_label">合計セット数</string>
-    <string name="training_rest_label">休憩時間</string>
     <string name="training_state_training">トレーニング中</string>
     <string name="training_state_resting">休憩中</string>
     <string name="training_state_completed">完了</string>

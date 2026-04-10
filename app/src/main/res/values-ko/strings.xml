@@ -45,8 +45,6 @@
     <string name="training_routine_label">루틴</string>
     <string name="training_routine_none">빠른 운동</string>
     <string name="training_routine_reps">횟수: %1$d</string>
-    <string name="training_sets_label">총 세트 수</string>
-    <string name="training_rest_label">휴식 시간</string>
     <string name="training_state_training">운동 중</string>
     <string name="training_state_resting">휴식 중</string>
     <string name="training_state_completed">완료됨</string>

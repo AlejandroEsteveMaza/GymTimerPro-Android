@@ -45,8 +45,6 @@
     <string name="training_routine_label">रूटीन</string>
     <string name="training_routine_none">त्वरित व्यायाम</string>
     <string name="training_routine_reps">दोहराव: %1$d</string>
-    <string name="training_sets_label">कुल सेट</string>
-    <string name="training_rest_label">विश्राम समय</string>
     <string name="training_state_training">व्यायाम हो रहा है</string>
     <string name="training_state_resting">विश्राम हो रहा है</string>
     <string name="training_state_completed">पूर्ण</string>

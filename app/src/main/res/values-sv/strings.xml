@@ -45,8 +45,6 @@
     <string name="training_routine_label">Rutin</string>
     <string name="training_routine_none">Snabbträning</string>
     <string name="training_routine_reps">Rep: %1$d</string>
-    <string name="training_sets_label">Totala set</string>
-    <string name="training_rest_label">Vilotid</string>
     <string name="training_state_training">Tränar</string>
     <string name="training_state_resting">Vilar</string>
     <string name="training_state_completed">Slutförd</string>

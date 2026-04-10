@@ -45,8 +45,6 @@
     <string name="training_routine_label">Rotina</string>
     <string name="training_routine_none">Treino rápido</string>
     <string name="training_routine_reps">Reps: %1$d</string>
-    <string name="training_sets_label">Total de séries</string>
-    <string name="training_rest_label">Tempo de descanso</string>
     <string name="training_state_training">A treinar</string>
     <string name="training_state_resting">A descansar</string>
     <string name="training_state_completed">Concluído</string>

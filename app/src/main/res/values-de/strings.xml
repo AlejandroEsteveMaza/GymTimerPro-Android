@@ -45,8 +45,6 @@
     <string name="training_routine_label">Routine</string>
     <string name="training_routine_none">Schnelles Training</string>
     <string name="training_routine_reps">Wdh.: %1$d</string>
-    <string name="training_sets_label">Sätze gesamt</string>
-    <string name="training_rest_label">Pausenzeit</string>
     <string name="training_state_training">Training</string>
     <string name="training_state_resting">Pause</string>
     <string name="training_state_completed">Abgeschlossen</string>
