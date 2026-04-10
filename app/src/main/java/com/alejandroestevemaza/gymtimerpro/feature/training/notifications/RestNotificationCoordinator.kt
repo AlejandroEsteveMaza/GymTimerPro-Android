@@ -255,7 +255,8 @@ class AndroidRestNotificationCoordinator(
         }
 
         val audioAttributes = AudioAttributes.Builder()
-            .setUsage(AudioAttributes.USAGE_ALARM)
+            .setUsage(AudioAttributes.USAGE_NOTIFICATION)
+            .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
             .build()
         val endChannel = NotificationChannel(
             CHANNEL_REST_END,
@@ -289,15 +290,17 @@ class AndroidRestNotificationCoordinator(
 
     private fun shouldRecreateEndChannel(channel: NotificationChannel): Boolean {
         val prefs = appContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        if (prefs.getBoolean(KEY_END_CHANNEL_MIGRATED, false)) return false
+        if (prefs.getBoolean(KEY_END_CHANNEL_MIGRATED_V2, false)) return false
+        // Recreate if sound is missing, importance is too low, or audio usage is the legacy
+        // USAGE_ALARM (which routes through the alarm volume stream and is often muted by users).
         val needsSound = channel.sound == null
         val needsImportance = channel.importance < NotificationManager.IMPORTANCE_HIGH
-        val needsUsage = channel.audioAttributes?.usage != AudioAttributes.USAGE_ALARM
-        return if (needsSound || needsImportance || needsUsage) {
-            prefs.edit().putBoolean(KEY_END_CHANNEL_MIGRATED, true).apply()
+        val hasWrongUsage = channel.audioAttributes?.usage == AudioAttributes.USAGE_ALARM
+        return if (needsSound || needsImportance || hasWrongUsage) {
+            prefs.edit().putBoolean(KEY_END_CHANNEL_MIGRATED_V2, true).apply()
             true
         } else {
-            prefs.edit().putBoolean(KEY_END_CHANNEL_MIGRATED, true).apply()
+            prefs.edit().putBoolean(KEY_END_CHANNEL_MIGRATED_V2, true).apply()
             false
         }
     }
@@ -346,5 +349,7 @@ class AndroidRestNotificationCoordinator(
         private const val PREFS_NAME = "rest_notifications"
         private const val KEY_LIVE_CHANNEL_MIGRATED = "rest_live_channel_migrated"
         private const val KEY_END_CHANNEL_MIGRATED = "rest_end_channel_migrated"
+        // V2: forces recreation of channels that had USAGE_ALARM (wrong audio stream for notifications).
+        private const val KEY_END_CHANNEL_MIGRATED_V2 = "rest_end_channel_migrated_v2"
     }
 }
