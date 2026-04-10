@@ -5,6 +5,8 @@
     <uses-permission android:name="com.android.vending.BILLING" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
 
     <application
         android:name=".GymTimerProApplication"
@@ -26,6 +28,14 @@
             android:name=".feature.training.notifications.RestTimerAlarmReceiver"
             android:enabled="true"
             android:exported="false" />
+        <service
+            android:name=".feature.training.notifications.RestTimerService"
+            android:foregroundServiceType="specialUse"
+            android:exported="false">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Workout rest timer that plays a completion sound when the rest period ends" />
+        </service>
         <activity
             android:name=".MainActivity"
             android:exported="true"

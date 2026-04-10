@@ -159,6 +159,7 @@ fun TrainingRoute(
     }
     val trainingViewModel: TrainingViewModel = viewModel(
         factory = TrainingViewModel.factory(
+            appContext = context.applicationContext,
             appSettingsRepository = appContainer.appSettingsRepository,
             premiumStateRepository = appContainer.premiumStateRepository,
             trainingSessionRepository = appContainer.trainingSessionRepository,
@@ -166,7 +167,6 @@ fun TrainingRoute(
             trainingSessionCoordinator = appContainer.trainingSessionCoordinator,
             workoutCompletionRepository = appContainer.workoutCompletionRepository,
             restNotificationCoordinator = appContainer.restNotificationCoordinator,
-            restFinishedSoundPlayer = appContainer.restFinishedSoundPlayer,
             quickWorkoutLabel = stringResource(R.string.training_quick_workout),
         )
     )

@@ -130,7 +130,8 @@ class AndroidRestNotificationCoordinator(
             .setContentIntent(buildOpenAppPendingIntent())
             .build()
 
-        notificationManager.notify(TAG_REST_LIVE, ID_REST_LIVE, notification)
+        // Use untagged notify so the ID matches what startForeground() uses in RestTimerService.
+        notificationManager.notify(ID_REST_LIVE, notification)
     }
 
     private fun postRestFinishedNotification(
@@ -192,7 +193,7 @@ class AndroidRestNotificationCoordinator(
     }
 
     private fun cancelLiveNotification() {
-        notificationManager.cancel(TAG_REST_LIVE, ID_REST_LIVE)
+        notificationManager.cancel(ID_REST_LIVE)
     }
 
     private fun cancelRestEndNotification() {
@@ -233,40 +234,56 @@ class AndroidRestNotificationCoordinator(
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
         val manager = appContext.getSystemService(NotificationManager::class.java) ?: return
 
-        if (manager.getNotificationChannel(CHANNEL_REST_LIVE) == null) {
-            val liveChannel = NotificationChannel(
-                CHANNEL_REST_LIVE,
-                appContext.getString(R.string.notification_rest_finished_title),
-                NotificationManager.IMPORTANCE_LOW,
-            ).apply {
-                setShowBadge(false)
-                description = appContext.getString(R.string.notification_rest_finished_title)
-            }
-            manager.createNotificationChannel(liveChannel)
+        val existingLiveChannel = manager.getNotificationChannel(CHANNEL_REST_LIVE)
+        if (existingLiveChannel != null && shouldRecreateLiveChannel(existingLiveChannel)) {
+            manager.deleteNotificationChannel(CHANNEL_REST_LIVE)
         }
+
+        val liveChannel = NotificationChannel(
+            CHANNEL_REST_LIVE,
+            appContext.getString(R.string.notification_channel_rest_live_name),
+            NotificationManager.IMPORTANCE_LOW,
+        ).apply {
+            setShowBadge(false)
+            description = appContext.getString(R.string.notification_channel_rest_live_description)
+        }
+        manager.createNotificationChannel(liveChannel)
 
         val existingEndChannel = manager.getNotificationChannel(CHANNEL_REST_END)
         if (existingEndChannel != null && shouldRecreateEndChannel(existingEndChannel)) {
             manager.deleteNotificationChannel(CHANNEL_REST_END)
         }
 
-        if (manager.getNotificationChannel(CHANNEL_REST_END) == null) {
-            val audioAttributes = AudioAttributes.Builder()
-                .setUsage(AudioAttributes.USAGE_ALARM)
-                .build()
-            val endChannel = NotificationChannel(
-                CHANNEL_REST_END,
-                appContext.getString(R.string.notification_rest_finished_title),
-                NotificationManager.IMPORTANCE_HIGH,
-            ).apply {
-                enableVibration(false)
-                setSound(
-                    RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION),
-                    audioAttributes,
-                )
-                description = appContext.getString(R.string.notification_rest_finished_title)
-            }
-            manager.createNotificationChannel(endChannel)
+        val audioAttributes = AudioAttributes.Builder()
+            .setUsage(AudioAttributes.USAGE_ALARM)
+            .build()
+        val endChannel = NotificationChannel(
+            CHANNEL_REST_END,
+            appContext.getString(R.string.notification_channel_rest_end_name),
+            NotificationManager.IMPORTANCE_HIGH,
+        ).apply {
+            enableVibration(false)
+            setSound(
+                RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION),
+                audioAttributes,
+            )
+            description = appContext.getString(R.string.notification_channel_rest_end_description)
+        }
+        manager.createNotificationChannel(endChannel)
+    }
+
+    private fun shouldRecreateLiveChannel(channel: NotificationChannel): Boolean {
+        val prefs = appContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        if (prefs.getBoolean(KEY_LIVE_CHANNEL_MIGRATED, false)) return false
+        val legacyLabel = appContext.getString(R.string.notification_rest_finished_title)
+        val looksLegacyChannel =
+            channel.name?.toString() == legacyLabel && channel.description == legacyLabel
+        return if (looksLegacyChannel) {
+            prefs.edit().putBoolean(KEY_LIVE_CHANNEL_MIGRATED, true).apply()
+            true
+        } else {
+            prefs.edit().putBoolean(KEY_LIVE_CHANNEL_MIGRATED, true).apply()
+            false
         }
     }
 
@@ -327,6 +344,7 @@ class AndroidRestNotificationCoordinator(
         private const val TAG_REST_LIVE = "restTimer.live"
         private const val TAG_REST_END = "restTimer.end"
         private const val PREFS_NAME = "rest_notifications"
+        private const val KEY_LIVE_CHANNEL_MIGRATED = "rest_live_channel_migrated"
         private const val KEY_END_CHANNEL_MIGRATED = "rest_end_channel_migrated"
     }
 }
