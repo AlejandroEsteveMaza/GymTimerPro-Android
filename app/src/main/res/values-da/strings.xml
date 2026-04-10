@@ -123,8 +123,8 @@
     <string name="routines_cancel">Annuller</string>
     <string name="routines_done">Færdig</string>
     <string name="routines_delete">Slet rutine</string>
-    <string name="routines_remove_from_training">Fjern fra træning</string>
-    <string name="routines_apply_to_training">Anvend på træning</string>
+    <string name="routines_remove_from_training">Fjern rutine</string>
+    <string name="routines_apply_to_training">Brug rutine</string>
     <string name="routines_delete_confirm_title">Slet rutine?</string>
     <string name="routines_delete_confirm_body">Hvis denne rutine i øjeblikket er anvendt på træning, ryddes valget først. Klassifikationerne bevares.</string>
     <string name="routines_delete_confirm_action">Slet</string>

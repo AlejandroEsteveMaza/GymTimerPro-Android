@@ -123,8 +123,8 @@
     <string name="routines_cancel">取消</string>
     <string name="routines_done">完成</string>
     <string name="routines_delete">删除例程</string>
-    <string name="routines_remove_from_training">从训练中删除</string>
-    <string name="routines_apply_to_training">应用到训练</string>
+    <string name="routines_remove_from_training">移除计划</string>
+    <string name="routines_apply_to_training">使用计划</string>
     <string name="routines_delete_confirm_title">删除例程？</string>
     <string name="routines_delete_confirm_body">如果此例程当前已应用到训练，将首先清除选择。分类将被保留。</string>
     <string name="routines_delete_confirm_action">删除</string>

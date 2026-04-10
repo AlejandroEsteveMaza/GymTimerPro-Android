@@ -123,8 +123,8 @@
     <string name="routines_cancel">Avbryt</string>
     <string name="routines_done">Klar</string>
     <string name="routines_delete">Ta bort rutin</string>
-    <string name="routines_remove_from_training">Ta bort från träning</string>
-    <string name="routines_apply_to_training">Tillämpa på träning</string>
+    <string name="routines_remove_from_training">Ta bort rutin</string>
+    <string name="routines_apply_to_training">Använd rutin</string>
     <string name="routines_delete_confirm_title">Ta bort rutin?</string>
     <string name="routines_delete_confirm_body">Om den här rutinen för tillfället är tillämpad på träning rensas urvalet först. Klassificeringarna bevaras.</string>
     <string name="routines_delete_confirm_action">Ta bort</string>

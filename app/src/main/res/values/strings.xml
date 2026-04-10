@@ -122,8 +122,8 @@
     <string name="routines_cancel">Cancel</string>
     <string name="routines_done">Done</string>
     <string name="routines_delete">Delete routine</string>
-    <string name="routines_remove_from_training">Remove from training</string>
-    <string name="routines_apply_to_training">Apply to training</string>
+    <string name="routines_remove_from_training">Remove routine</string>
+    <string name="routines_apply_to_training">Use routine</string>
     <string name="routines_delete_confirm_title">Delete routine?</string>
     <string name="routines_delete_confirm_body">If this routine is currently applied to training, the training selection is cleared first. The classifications themselves are preserved.</string>
     <string name="routines_delete_confirm_action">Delete</string>

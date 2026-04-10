@@ -1850,7 +1850,7 @@ private fun WeightEditorRow(
                 color = GymTheme.colors.textPrimary,
             )
         }
-        OutlinedTextField(
+        TextField(
             value = value,
             onValueChange = onWeightChanged,
             modifier = Modifier.width(130.dp),
@@ -1858,6 +1858,19 @@ private fun WeightEditorRow(
             isError = !isWeightValid,
             singleLine = true,
             textStyle = GymTheme.type.numericSecondary,
+            colors = TextFieldDefaults.colors(
+                focusedContainerColor = Color.Transparent,
+                unfocusedContainerColor = Color.Transparent,
+                errorContainerColor = Color.Transparent,
+                focusedTextColor = GymTheme.colors.textPrimary,
+                unfocusedTextColor = GymTheme.colors.textPrimary,
+                errorTextColor = GymTheme.colors.textPrimary,
+                cursorColor = GymTheme.colors.iconTint,
+                focusedIndicatorColor = Color.Transparent,
+                unfocusedIndicatorColor = Color.Transparent,
+                errorIndicatorColor = Color.Transparent,
+                disabledIndicatorColor = Color.Transparent,
+            ),
         )
     }
 }

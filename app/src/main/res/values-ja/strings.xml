@@ -123,8 +123,8 @@
     <string name="routines_cancel">キャンセル</string>
     <string name="routines_done">完了</string>
     <string name="routines_delete">ルーティンを削除</string>
-    <string name="routines_remove_from_training">トレーニングから削除</string>
-    <string name="routines_apply_to_training">トレーニングに適用</string>
+    <string name="routines_remove_from_training">ルーティンを削除</string>
+    <string name="routines_apply_to_training">ルーティンを使用</string>
     <string name="routines_delete_confirm_title">ルーティンを削除しますか?</string>
     <string name="routines_delete_confirm_body">このルーティンが現在トレーニングに適用されている場合、まず選択がクリアされます。カテゴリは保持されます。</string>
     <string name="routines_delete_confirm_action">削除</string>

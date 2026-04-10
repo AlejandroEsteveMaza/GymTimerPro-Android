@@ -123,8 +123,8 @@
     <string name="routines_cancel">रद्द करें</string>
     <string name="routines_done">हो गया</string>
     <string name="routines_delete">रूटीन हटाएं</string>
-    <string name="routines_remove_from_training">व्यायाम से हटाएं</string>
-    <string name="routines_apply_to_training">व्यायाम में लागू करें</string>
+    <string name="routines_remove_from_training">रूटीन हटाएं</string>
+    <string name="routines_apply_to_training">रूटीन उपयोग करें</string>
     <string name="routines_delete_confirm_title">रूटीन हटाएं?</string>
     <string name="routines_delete_confirm_body">यदि यह रूटीन वर्तमान में व्यायाम में लागू है, तो पहले चयन साफ़ किया जाएगा। वर्गीकरण संरक्षित रहेंगे।</string>
     <string name="routines_delete_confirm_action">हटाएं</string>

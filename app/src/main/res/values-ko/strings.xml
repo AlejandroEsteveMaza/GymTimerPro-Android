@@ -123,8 +123,8 @@
     <string name="routines_cancel">취소</string>
     <string name="routines_done">완료</string>
     <string name="routines_delete">루틴 삭제</string>
-    <string name="routines_remove_from_training">운동에서 제거</string>
-    <string name="routines_apply_to_training">운동에 적용</string>
+    <string name="routines_remove_from_training">루틴 제거</string>
+    <string name="routines_apply_to_training">루틴 사용</string>
     <string name="routines_delete_confirm_title">루틴을 삭제하시겠습니까?</string>
     <string name="routines_delete_confirm_body">이 루틴이 현재 운동에 적용되어 있으면 선택이 먼저 지워집니다. 분류는 유지됩니다.</string>
     <string name="routines_delete_confirm_action">삭제</string>

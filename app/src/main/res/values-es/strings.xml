@@ -123,8 +123,8 @@
     <string name="routines_cancel">Cancelar</string>
     <string name="routines_done">Listo</string>
     <string name="routines_delete">Eliminar rutina</string>
-    <string name="routines_remove_from_training">Quitar del entrenamiento</string>
-    <string name="routines_apply_to_training">Aplicar al entrenamiento</string>
+    <string name="routines_remove_from_training">Quitar rutina</string>
+    <string name="routines_apply_to_training">Usar rutina</string>
     <string name="routines_delete_confirm_title">¿Eliminar rutina?</string>
     <string name="routines_delete_confirm_body">Si esta rutina está aplicada al entrenamiento, la selección se borrará primero. Las clasificaciones se conservan.</string>
     <string name="routines_delete_confirm_action">Eliminar</string>

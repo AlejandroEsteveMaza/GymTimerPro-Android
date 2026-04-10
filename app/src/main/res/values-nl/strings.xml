@@ -123,8 +123,8 @@
     <string name="routines_cancel">Annuleren</string>
     <string name="routines_done">Klaar</string>
     <string name="routines_delete">Routine verwijderen</string>
-    <string name="routines_remove_from_training">Verwijderen uit training</string>
-    <string name="routines_apply_to_training">Toepassen op training</string>
+    <string name="routines_remove_from_training">Routine verwijderen</string>
+    <string name="routines_apply_to_training">Routine gebruiken</string>
     <string name="routines_delete_confirm_title">Routine verwijderen?</string>
     <string name="routines_delete_confirm_body">Als deze routine momenteel op training is toegepast, wordt de selectie eerst gewist. De classificaties blijven behouden.</string>
     <string name="routines_delete_confirm_action">Verwijderen</string>

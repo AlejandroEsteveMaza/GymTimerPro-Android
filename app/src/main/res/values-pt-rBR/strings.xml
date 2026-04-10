@@ -123,8 +123,8 @@
     <string name="routines_cancel">Cancelar</string>
     <string name="routines_done">Concluído</string>
     <string name="routines_delete">Excluir rotina</string>
-    <string name="routines_remove_from_training">Remover do treino</string>
-    <string name="routines_apply_to_training">Aplicar ao treino</string>
+    <string name="routines_remove_from_training">Remover rotina</string>
+    <string name="routines_apply_to_training">Usar rotina</string>
     <string name="routines_delete_confirm_title">Excluir rotina?</string>
     <string name="routines_delete_confirm_body">Se esta rotina estiver atualmente aplicada ao treino, a seleção é limpa primeiro. As classificações são preservadas.</string>
     <string name="routines_delete_confirm_action">Excluir</string>
