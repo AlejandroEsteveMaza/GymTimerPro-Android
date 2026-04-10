@@ -32,6 +32,9 @@ class RestTimerService : Service() {
 
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private var timerJob: Job? = null
+    // Tracks the timer currently owned by this service instance. Used to
+    // ignore redundant ACTION_START calls (e.g. from ViewModel recreation).
+    private var activeEndEpochMillis: Long? = null
 
     private val appContainer get() = (application as GymTimerProApplication).appContainer
 
@@ -45,11 +48,15 @@ class RestTimerService : Service() {
 
     private fun handleStart(intent: Intent) {
         val endEpochMillis = intent.getLongExtra(EXTRA_END_EPOCH_MILLIS, 0L)
+        if (activeEndEpochMillis == endEpochMillis) return  // already running this timer
+
         val currentSet = intent.getIntExtra(EXTRA_CURRENT_SET, 1)
         val totalSets = intent.getIntExtra(EXTRA_TOTAL_SETS, 1)
-        val energySavingMode = EnergySavingMode.entries.getOrElse(
-            intent.getIntExtra(EXTRA_ENERGY_SAVING, 0)
-        ) { EnergySavingMode.Off }
+        val energySavingMode = intent.getStringExtra(EXTRA_ENERGY_SAVING)
+            ?.let { runCatching { enumValueOf<EnergySavingMode>(it) }.getOrNull() }
+            ?: EnergySavingMode.Off
+
+        activeEndEpochMillis = endEpochMillis
 
         // A minimal placeholder keeps the foreground service alive. The
         // RestNotificationCoordinator immediately replaces it with the full
@@ -119,11 +126,13 @@ class RestTimerService : Service() {
     }
 
     private fun stopForegroundAndSelf() {
+        activeEndEpochMillis = null
         ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE)
         stopSelf()
     }
 
     override fun onDestroy() {
+        activeEndEpochMillis = null
         timerJob?.cancel()
         serviceScope.cancel()
         super.onDestroy()
@@ -156,7 +165,7 @@ class RestTimerService : Service() {
             putExtra(EXTRA_END_EPOCH_MILLIS, endEpochMillis)
             putExtra(EXTRA_CURRENT_SET, currentSet)
             putExtra(EXTRA_TOTAL_SETS, totalSets)
-            putExtra(EXTRA_ENERGY_SAVING, energySavingMode.ordinal)
+            putExtra(EXTRA_ENERGY_SAVING, energySavingMode.name)
         }
 
         fun cancelIntent(context: Context): Intent =

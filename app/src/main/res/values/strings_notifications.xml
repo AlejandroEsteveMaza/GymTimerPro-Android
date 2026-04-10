@@ -1,4 +1,8 @@
 <resources>
+    <string name="notification_channel_rest_live_name">Rest timer</string>
+    <string name="notification_channel_rest_live_description">Live rest countdown notification.</string>
+    <string name="notification_channel_rest_end_name">Rest finished alert</string>
+    <string name="notification_channel_rest_end_description">Alert played when a rest period ends.</string>
     <string name="notification_rest_live_title">Rest</string>
     <string name="notification_rest_finished_title">Rest finished</string>
     <string name="notification_rest_finished_body_format">Set %1$d/%2$d</string>

@@ -46,7 +46,6 @@ class TrainingViewModel(
 ) : ViewModel() {
     private val showDailyLimitDialog = MutableStateFlow(false)
 
-    private var activeTimerEndEpochMillis: Long? = null
     private var completionResetJob: Job? = null
     private var scheduledCompletionEpochMillis: Long? = null
 
@@ -294,31 +293,28 @@ class TrainingViewModel(
         session: TrainingSessionState,
     ) {
         val endEpochMillis = session.timerEndEpochMillis
+        restNotificationCoordinator.syncRestState(session)
+
         if (!session.timerIsRunning || endEpochMillis == null) {
-            restNotificationCoordinator.syncRestState(session)
-            if (activeTimerEndEpochMillis != null) {
-                appContext.startService(RestTimerService.cancelIntent(appContext))
-            }
-            activeTimerEndEpochMillis = null
+            // Service ignores this if no timer is running; safe to call unconditionally.
+            appContext.startService(RestTimerService.cancelIntent(appContext))
             return
         }
 
-        if (activeTimerEndEpochMillis == endEpochMillis) return
-
-        // Set up the AlarmManager alarm and live notification before starting the service.
-        // The coordinator's notify() uses the same notification ID (untagged) as the
-        // service's startForeground(), so the live notification is updated immediately.
-        restNotificationCoordinator.syncRestState(session)
-        activeTimerEndEpochMillis = endEpochMillis
-
-        val intent = RestTimerService.startIntent(
-            context = appContext,
-            endEpochMillis = endEpochMillis,
-            currentSet = session.currentSet,
-            totalSets = session.totalSets,
-            energySavingMode = settings.energySavingMode,
+        // The service guards against duplicate starts for the same endEpochMillis,
+        // so it is safe to call startForegroundService on every emission.
+        // The coordinator's notify() uses the same notification ID (untagged) as
+        // startForeground(), so the live notification is updated immediately.
+        ContextCompat.startForegroundService(
+            appContext,
+            RestTimerService.startIntent(
+                context = appContext,
+                endEpochMillis = endEpochMillis,
+                currentSet = session.currentSet,
+                totalSets = session.totalSets,
+                energySavingMode = settings.energySavingMode,
+            ),
         )
-        ContextCompat.startForegroundService(appContext, intent)
     }
 
     private fun synchronizeCompletionReset(session: TrainingSessionState) {

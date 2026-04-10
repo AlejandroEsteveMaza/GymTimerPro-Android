@@ -1,4 +1,8 @@
 <resources>
+    <string name="notification_channel_rest_live_name">Temporizador de descanso</string>
+    <string name="notification_channel_rest_live_description">Notificación en vivo de la cuenta atrás del descanso.</string>
+    <string name="notification_channel_rest_end_name">Aviso de descanso terminado</string>
+    <string name="notification_channel_rest_end_description">Aviso que suena cuando termina el descanso.</string>
     <string name="notification_rest_live_title">Descanso</string>
     <string name="notification_rest_finished_title">Descanso terminado</string>
     <string name="notification_rest_finished_body_format">Serie %1$d/%2$d</string>
