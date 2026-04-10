@@ -12,6 +12,7 @@ import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.SizeTransform
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
@@ -439,24 +440,70 @@ private fun TrainingConfigurationCard(
                 state = if (uiState.canEditConfiguration) GymComponentState.Normal else GymComponentState.Disabled,
             )
             if (!uiState.isPro) {
+                val consumed = uiState.dailyUsage.consumedCount
+                val limit = com.alejandroestevemaza.gymtimerpro.core.model.TrainingDefaults.dailyFreeUsageLimit
+                val rawProgress = (consumed.toFloat() / limit).coerceIn(0f, 1f)
+                val animatedProgress by animateFloatAsState(
+                    targetValue = rawProgress,
+                    animationSpec = tween(durationMillis = 400),
+                    label = "DailyUsageProgress",
+                )
+                val usageColor = when {
+                    rawProgress >= 1f -> GymTheme.colors.error
+                    rawProgress >= 0.75f -> GymTheme.colors.resting
+                    else -> GymTheme.colors.iconTint
+                }
                 HorizontalDivider(color = GymTheme.colors.divider)
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = GymTheme.spacing.s12),
+                    verticalArrangement = Arrangement.spacedBy(GymTheme.spacing.s8),
                 ) {
-                    Text(
-                        text = stringResource(
-                            R.string.pro_usage_today_format,
-                            uiState.dailyUsage.consumedCount,
-                            com.alejandroestevemaza.gymtimerpro.core.model.TrainingDefaults.dailyFreeUsageLimit,
-                        ),
-                        style = GymTheme.type.footnoteRegular,
-                        color = GymTheme.colors.textSecondary,
-                        modifier = Modifier.weight(1f),
-                    )
-                    TextButton(onClick = onUpgradeToPro) {
-                        Text(text = stringResource(R.string.pro_button_upgrade))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            text = stringResource(
+                                R.string.pro_usage_today_format,
+                                consumed,
+                                limit,
+                            ),
+                            style = GymTheme.type.footnoteSemibold,
+                            color = usageColor,
+                        )
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(GymTheme.radii.capsule))
+                                .background(GymTheme.colors.iconTint.copy(alpha = 0.12f))
+                                .clickable(onClick = onUpgradeToPro)
+                                .padding(
+                                    horizontal = GymTheme.spacing.s10,
+                                    vertical = GymTheme.spacing.s4,
+                                ),
+                        ) {
+                            Text(
+                                text = stringResource(R.string.pro_button_upgrade),
+                                style = GymTheme.type.captionSemibold,
+                                color = GymTheme.colors.iconTint,
+                            )
+                        }
+                    }
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(3.dp)
+                            .clip(RoundedCornerShape(GymTheme.radii.capsule))
+                            .background(GymTheme.colors.divider),
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth(animatedProgress)
+                                .fillMaxHeight()
+                                .background(usageColor),
+                        )
                     }
                 }
             }
