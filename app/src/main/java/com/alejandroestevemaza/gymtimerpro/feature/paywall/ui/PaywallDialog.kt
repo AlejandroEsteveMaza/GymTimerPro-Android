@@ -311,7 +311,7 @@ private fun PaywallHeader(
                         uiState.request.dailyLimit,
                     ),
                     style = GymTheme.type.footnoteSemibold,
-                    color = GymTheme.colors.textSecondary,
+                    color = GymTheme.colors.error,
                 )
             }
         }
