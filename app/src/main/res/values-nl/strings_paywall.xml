@@ -136,11 +136,6 @@
     <string name="paywall_value_subtitle">Volledige toegang tot de timer met een eenmalige aankoop.</string>
     <string name="paywall_value_title">Train zonder grenzen</string>
     <string name="pro_button_upgrade">Ontgrendelen</string>
-    <string name="pro_locked_message">Beschikbaar in Pro.</string>
-    <string name="pro_locked_progress_title">Voortgang</string>
-    <string name="pro_locked_routines_title">Routines</string>
-    <string name="pro_locked_settings_title">Instellingen</string>
-    <string name="pro_locked_unlock">Pro ontgrendelen</string>
     <string name="pro_status_free">Gratis</string>
     <string name="pro_status_pro">Pro</string>
     <string name="pro_usage_today_format">%1$d/%2$d vandaag</string>

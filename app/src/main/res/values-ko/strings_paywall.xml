@@ -136,12 +136,7 @@
     <string name="paywall_value_subtitle">일회성 구매로 타이머 전체 사용.</string>
     <string name="paywall_value_title">제한 없이 운동</string>
     <string name="pro_button_upgrade">잠금 해제</string>
-    <string name="pro_locked_message">Pro에서 사용할 수 있습니다.</string>
-    <string name="pro_locked_progress_title">진행</string>
-    <string name="pro_locked_routines_title">루틴</string>
-    <string name="pro_locked_settings_title">설정</string>
-    <string name="pro_locked_unlock">Pro 잠금 해제</string>
     <string name="pro_status_free">무료</string>
-    <string name="pro_status_pro">프로</string>
-    <string name="pro_usage_today_format">%1$d/%2$d 오늘</string>
+    <string name="pro_status_pro">Pro</string>
+    <string name="pro_usage_today_format">오늘 %1$d/%2$d</string>
 </resources>

@@ -136,12 +136,7 @@
     <string name="paywall_value_subtitle">Accesso completo al timer con un acquisto unico.</string>
     <string name="paywall_value_title">Allenati senza limiti</string>
     <string name="pro_button_upgrade">Sblocca</string>
-    <string name="pro_locked_message">Disponibile in Pro.</string>
-    <string name="pro_locked_progress_title">Progresso</string>
-    <string name="pro_locked_routines_title">Routine</string>
-    <string name="pro_locked_settings_title">Impostazioni</string>
-    <string name="pro_locked_unlock">Sblocca Pro</string>
-    <string name="pro_status_free">Gratis</string>
+    <string name="pro_status_free">Gratuito</string>
     <string name="pro_status_pro">Pro</string>
     <string name="pro_usage_today_format">%1$d/%2$d oggi</string>
 </resources>

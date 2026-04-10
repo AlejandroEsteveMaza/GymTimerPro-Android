@@ -136,11 +136,6 @@
     <string name="paywall_value_subtitle">Acceso completo al temporizador con un pago único.</string>
     <string name="paywall_value_title">Entrena sin límites</string>
     <string name="pro_button_upgrade">Desbloquear</string>
-    <string name="pro_locked_message">Disponible en Pro.</string>
-    <string name="pro_locked_progress_title">Progreso</string>
-    <string name="pro_locked_routines_title">Rutinas</string>
-    <string name="pro_locked_settings_title">Ajustes</string>
-    <string name="pro_locked_unlock">Desbloquear Pro</string>
     <string name="pro_status_free">Gratis</string>
     <string name="pro_status_pro">Pro</string>
     <string name="pro_usage_today_format">%1$d/%2$d hoy</string>

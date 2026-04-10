@@ -136,11 +136,6 @@
     <string name="paywall_value_subtitle">Full tillgång till timern med ett engångsköp.</string>
     <string name="paywall_value_title">Träna utan gränser</string>
     <string name="pro_button_upgrade">Lås upp</string>
-    <string name="pro_locked_message">Tillgangligt i Pro.</string>
-    <string name="pro_locked_progress_title">Framsteg</string>
-    <string name="pro_locked_routines_title">Rutiner</string>
-    <string name="pro_locked_settings_title">Installningar</string>
-    <string name="pro_locked_unlock">Lås upp Pro</string>
     <string name="pro_status_free">Gratis</string>
     <string name="pro_status_pro">Pro</string>
     <string name="pro_usage_today_format">%1$d/%2$d idag</string>

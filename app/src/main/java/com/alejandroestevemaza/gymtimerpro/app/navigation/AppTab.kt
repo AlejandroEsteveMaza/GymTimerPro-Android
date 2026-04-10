@@ -13,30 +13,25 @@ enum class AppTab(
     val route: String,
     @param:StringRes val labelRes: Int,
     val icon: ImageVector,
-    val requiresPremium: Boolean,
 ) {
     Training(
         route = "training",
         labelRes = R.string.app_navigation_training,
         icon = Icons.Rounded.FitnessCenter,
-        requiresPremium = false,
     ),
     Routines(
         route = "routines",
         labelRes = R.string.app_navigation_routines,
         icon = Icons.Rounded.Repeat,
-        requiresPremium = true,
     ),
     Progress(
         route = "progress",
         labelRes = R.string.app_navigation_progress,
         icon = Icons.Rounded.Insights,
-        requiresPremium = true,
     ),
     Settings(
         route = "settings",
         labelRes = R.string.app_navigation_settings,
         icon = Icons.Rounded.Settings,
-        requiresPremium = true,
     ),
 }

@@ -136,11 +136,6 @@
     <string name="paywall_value_subtitle">Acesso completo ao temporizador com uma compra única.</string>
     <string name="paywall_value_title">Treine sem limites</string>
     <string name="pro_button_upgrade">Desbloquear</string>
-    <string name="pro_locked_message">Disponivel no Pro.</string>
-    <string name="pro_locked_progress_title">Progresso</string>
-    <string name="pro_locked_routines_title">Rotinas</string>
-    <string name="pro_locked_settings_title">Ajustes</string>
-    <string name="pro_locked_unlock">Desbloquear Pro</string>
     <string name="pro_status_free">Grátis</string>
     <string name="pro_status_pro">Pro</string>
     <string name="pro_usage_today_format">%1$d/%2$d hoje</string>

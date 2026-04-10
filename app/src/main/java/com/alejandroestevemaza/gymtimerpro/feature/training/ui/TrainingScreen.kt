@@ -114,9 +114,7 @@ import com.alejandroestevemaza.gymtimerpro.core.format.formatRoutineSummary
 import com.alejandroestevemaza.gymtimerpro.core.model.Routine
 import com.alejandroestevemaza.gymtimerpro.core.model.RoutineClassification
 import com.alejandroestevemaza.gymtimerpro.data.preferences.AppContainer
-import com.alejandroestevemaza.gymtimerpro.feature.paywall.model.PaywallEntryPoint
 import com.alejandroestevemaza.gymtimerpro.feature.paywall.model.PaywallInfoLevel
-import com.alejandroestevemaza.gymtimerpro.feature.paywall.model.PaywallPresentationContext
 import com.alejandroestevemaza.gymtimerpro.feature.paywall.model.PaywallPresentationRequest
 import com.alejandroestevemaza.gymtimerpro.feature.routines.ui.RoutineCatalogSection
 import com.alejandroestevemaza.gymtimerpro.feature.routines.ui.RoutinesUiState
@@ -282,10 +280,7 @@ fun TrainingScreen(
         if (uiState.showDailyLimitDialog) {
             onRequestPaywall(
                 PaywallPresentationRequest(
-                    context = PaywallPresentationContext(
-                        entryPoint = PaywallEntryPoint.DailyLimitDuringWorkout,
-                        infoLevel = PaywallInfoLevel.Light,
-                    ),
+                    infoLevel = PaywallInfoLevel.Standard,
                     dailyLimit = com.alejandroestevemaza.gymtimerpro.core.model.TrainingDefaults.dailyFreeUsageLimit,
                     consumedToday = uiState.dailyUsage.consumedCount,
                 )
@@ -355,14 +350,14 @@ fun TrainingScreen(
                     onTotalSetsChanged = onTotalSetsChanged,
                     onRestSecondsChanged = onRestSecondsChanged,
                     onUpgradeToPro = {
+                        val consumed = uiState.dailyUsage.consumedCount
+                        val limit = com.alejandroestevemaza.gymtimerpro.core.model.TrainingDefaults.dailyFreeUsageLimit
+                        val infoLevel = if (consumed >= limit) PaywallInfoLevel.Standard else PaywallInfoLevel.Light
                         onRequestPaywall(
                             PaywallPresentationRequest(
-                                context = PaywallPresentationContext(
-                                    entryPoint = PaywallEntryPoint.ProModule,
-                                    infoLevel = PaywallInfoLevel.Standard,
-                                ),
-                                dailyLimit = com.alejandroestevemaza.gymtimerpro.core.model.TrainingDefaults.dailyFreeUsageLimit,
-                                consumedToday = uiState.dailyUsage.consumedCount,
+                                infoLevel = infoLevel,
+                                dailyLimit = limit,
+                                consumedToday = consumed,
                             )
                         )
                     },
@@ -466,6 +461,28 @@ private fun TrainingConfigurationCard(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun ProStatusChip(
+    isPro: Boolean,
+) {
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(GymTheme.spacing.s4),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = if (isPro) stringResource(R.string.pro_status_pro) else stringResource(R.string.pro_status_free),
+            style = GymTheme.type.captionSemibold,
+            color = if (isPro) GymTheme.colors.textPrimary else GymTheme.colors.textSecondary,
+        )
+        Icon(
+            imageVector = Icons.Rounded.Verified,
+            contentDescription = null,
+            tint = if (isPro) GymTheme.colors.completed else GymTheme.colors.textSecondary,
+            modifier = Modifier.size(GymTheme.spacing.s14),
+        )
     }
 }
 
@@ -1015,28 +1032,6 @@ private fun WorkoutCompletedBanner() {
                 color = GymTheme.colors.completed,
             )
         }
-    }
-}
-
-@Composable
-private fun ProStatusChip(
-    isPro: Boolean,
-) {
-    Row(
-        horizontalArrangement = Arrangement.spacedBy(GymTheme.spacing.s4),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(
-            text = if (isPro) stringResource(R.string.pro_status_pro) else stringResource(R.string.pro_status_free),
-            style = GymTheme.type.captionSemibold,
-            color = if (isPro) GymTheme.colors.textPrimary else GymTheme.colors.textSecondary,
-        )
-        Icon(
-            imageVector = Icons.Rounded.Verified,
-            contentDescription = null,
-            tint = if (isPro) GymTheme.colors.completed else GymTheme.colors.textSecondary,
-            modifier = Modifier.size(GymTheme.spacing.s14),
-        )
     }
 }
 

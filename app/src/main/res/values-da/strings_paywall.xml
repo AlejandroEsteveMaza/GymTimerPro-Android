@@ -136,11 +136,6 @@
     <string name="paywall_value_subtitle">Fuld adgang til timeren med et engangskøb.</string>
     <string name="paywall_value_title">Træn uden begrænsninger</string>
     <string name="pro_button_upgrade">Lås op</string>
-    <string name="pro_locked_message">Tilgaengelig i Pro.</string>
-    <string name="pro_locked_progress_title">Fremskridt</string>
-    <string name="pro_locked_routines_title">Rutiner</string>
-    <string name="pro_locked_settings_title">Indstillinger</string>
-    <string name="pro_locked_unlock">Lås op for Pro</string>
     <string name="pro_status_free">Gratis</string>
     <string name="pro_status_pro">Pro</string>
     <string name="pro_usage_today_format">%1$d/%2$d i dag</string>

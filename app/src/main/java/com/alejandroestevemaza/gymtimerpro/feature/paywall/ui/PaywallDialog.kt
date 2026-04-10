@@ -123,7 +123,7 @@ private fun PaywallDialogContent(
     onPurchase: (Activity) -> Unit,
     onRestore: () -> Unit,
 ) {
-    val copySpec = uiState.request.context.copySpec()
+    val copySpec = uiState.request.infoLevel.copySpec()
 
     if (uiState.purchaseError != null) {
         AlertDialog(

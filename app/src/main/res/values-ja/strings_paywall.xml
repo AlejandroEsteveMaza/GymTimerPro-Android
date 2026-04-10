@@ -135,13 +135,8 @@
     <string name="paywall_trial_incentive_format">無料で%1$s付き。</string>
     <string name="paywall_value_subtitle">一度の購入でタイマーをフル活用。</string>
     <string name="paywall_value_title">制限なくトレーニング</string>
-    <string name="pro_button_upgrade">アンロック</string>
-    <string name="pro_locked_message">Proで利用できます。</string>
-    <string name="pro_locked_progress_title">進捗</string>
-    <string name="pro_locked_routines_title">ルーティン</string>
-    <string name="pro_locked_settings_title">設定</string>
-    <string name="pro_locked_unlock">Proを解除</string>
+    <string name="pro_button_upgrade">ロック解除</string>
     <string name="pro_status_free">無料</string>
-    <string name="pro_status_pro">プロ</string>
-    <string name="pro_usage_today_format">%1$d/%2$d 本日</string>
+    <string name="pro_status_pro">Pro</string>
+    <string name="pro_usage_today_format">今日 %1$d/%2$d</string>
 </resources>

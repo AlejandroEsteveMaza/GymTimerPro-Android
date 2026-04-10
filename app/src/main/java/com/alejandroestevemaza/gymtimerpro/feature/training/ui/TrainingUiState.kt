@@ -20,7 +20,4 @@ data class TrainingUiState(
 
     val startRestEnabled: Boolean
         get() = !session.timerIsRunning && !session.completed
-
-    val remainingFreeUsage: Int
-        get() = (TrainingDefaults.dailyFreeUsageLimit - dailyUsage.consumedCount).coerceAtLeast(0)
 }
