@@ -20,7 +20,7 @@
         android:theme="@style/Theme.GymTimerPro">
         <meta-data
             android:name="PAYWALL_TERMS_URL"
-            android:value="https://www.apple.com/legal/internet-services/itunes/dev/stdeula/" />
+            android:value="https://play.google.com/intl/en_us/about/play-terms/" />
         <meta-data
             android:name="PAYWALL_PRIVACY_URL"
             android:value="https://alejandroestevemaza.github.io/GymTimerPro-privacy/" />
