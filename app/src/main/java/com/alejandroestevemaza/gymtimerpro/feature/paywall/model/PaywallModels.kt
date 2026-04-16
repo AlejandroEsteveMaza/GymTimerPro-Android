@@ -1,10 +1,5 @@
 package com.alejandroestevemaza.gymtimerpro.feature.paywall.model
 
-enum class PaywallEntryPoint {
-    ProModule,
-    DailyLimitDuringWorkout,
-}
-
 enum class PaywallInfoLevel {
     Light,
     Standard,
@@ -15,13 +10,8 @@ enum class PaywallSecondaryAction {
     Dismiss,
 }
 
-data class PaywallPresentationContext(
-    val entryPoint: PaywallEntryPoint,
-    val infoLevel: PaywallInfoLevel,
-)
-
 data class PaywallPresentationRequest(
-    val context: PaywallPresentationContext,
+    val infoLevel: PaywallInfoLevel,
     val dailyLimit: Int,
     val consumedToday: Int,
 )

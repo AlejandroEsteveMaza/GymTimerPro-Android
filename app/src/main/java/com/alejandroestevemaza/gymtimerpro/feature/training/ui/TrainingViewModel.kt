@@ -1,5 +1,7 @@
 package com.alejandroestevemaza.gymtimerpro.feature.training.ui
 
+import android.content.Context
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -16,9 +18,9 @@ import com.alejandroestevemaza.gymtimerpro.data.repository.RoutinesRepository
 import com.alejandroestevemaza.gymtimerpro.data.repository.TrainingSessionCoordinator
 import com.alejandroestevemaza.gymtimerpro.data.repository.WorkoutCompletionRepository
 import com.alejandroestevemaza.gymtimerpro.feature.training.notifications.RestNotificationCoordinator
+import com.alejandroestevemaza.gymtimerpro.feature.training.notifications.RestTimerService
 import java.time.Clock
 import java.time.Instant
-import java.time.ZoneId
 import java.time.temporal.ChronoUnit
 import java.util.UUID
 import kotlinx.coroutines.Job
@@ -31,6 +33,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 class TrainingViewModel(
+    private val appContext: Context,
     private val appSettingsRepository: AppSettingsRepository,
     private val premiumStateRepository: PremiumStateRepository,
     private val trainingSessionRepository: TrainingSessionRepository,
@@ -43,8 +46,6 @@ class TrainingViewModel(
 ) : ViewModel() {
     private val showDailyLimitDialog = MutableStateFlow(false)
 
-    private var timerJob: Job? = null
-    private var activeTimerEndEpochMillis: Long? = null
     private var completionResetJob: Job? = null
     private var scheduledCompletionEpochMillis: Long? = null
 
@@ -76,7 +77,7 @@ class TrainingViewModel(
             ) { settings, session -> settings to session }
                 .collect { (settings, session) ->
                     enforceTrainingConstraints(settings, session)
-                    synchronizeTimer(session)
+                    synchronizeTimer(settings, session)
                     synchronizeCompletionReset(session)
                 }
         }
@@ -287,56 +288,33 @@ class TrainingViewModel(
         }
     }
 
-    private fun synchronizeTimer(session: TrainingSessionState) {
+    private fun synchronizeTimer(
+        settings: AppSettings,
+        session: TrainingSessionState,
+    ) {
         val endEpochMillis = session.timerEndEpochMillis
-        if (!session.timerIsRunning || endEpochMillis == null) {
-            restNotificationCoordinator.syncRestState(session)
-            timerJob?.cancel()
-            timerJob = null
-            activeTimerEndEpochMillis = null
-            return
-        }
-
-        if (activeTimerEndEpochMillis == endEpochMillis && timerJob?.isActive == true) {
-            return
-        }
-
         restNotificationCoordinator.syncRestState(session)
-        timerJob?.cancel()
-        activeTimerEndEpochMillis = endEpochMillis
-        timerJob = viewModelScope.launch {
-            var lastPersistedRemainingSeconds: Int? = null
-            while (true) {
-                val remainingSeconds = computeRemainingSeconds(endEpochMillis)
-                if (remainingSeconds <= 0) {
-                    restNotificationCoordinator.notifyRestFinished(
-                        currentSet = session.currentSet,
-                        totalSets = session.totalSets,
-                    )
-                    trainingSessionRepository.updateSession { current ->
-                        current.copy(
-                            timerIsRunning = false,
-                            timerEndEpochMillis = null,
-                            timerRemainingSeconds = 0,
-                            timerDidFinish = true,
-                        )
-                    }
-                    break
-                }
 
-                if (lastPersistedRemainingSeconds != remainingSeconds) {
-                    lastPersistedRemainingSeconds = remainingSeconds
-                    trainingSessionRepository.updateSession { current ->
-                        current.copy(
-                            timerRemainingSeconds = remainingSeconds,
-                            timerDidFinish = false,
-                        )
-                    }
-                }
-
-                delay(250)
-            }
+        if (!session.timerIsRunning || endEpochMillis == null) {
+            // Service ignores this if no timer is running; safe to call unconditionally.
+            appContext.startService(RestTimerService.cancelIntent(appContext))
+            return
         }
+
+        // The service guards against duplicate starts for the same endEpochMillis,
+        // so it is safe to call startForegroundService on every emission.
+        // The coordinator's notify() uses the same notification ID (untagged) as
+        // startForeground(), so the live notification is updated immediately.
+        ContextCompat.startForegroundService(
+            appContext,
+            RestTimerService.startIntent(
+                context = appContext,
+                endEpochMillis = endEpochMillis,
+                currentSet = session.currentSet,
+                totalSets = session.totalSets,
+                energySavingMode = settings.energySavingMode,
+            ),
+        )
     }
 
     private fun synchronizeCompletionReset(session: TrainingSessionState) {
@@ -399,14 +377,9 @@ class TrainingViewModel(
         }
     }
 
-    private fun computeRemainingSeconds(endEpochMillis: Long): Int {
-        val diffMillis = endEpochMillis - clock.millis()
-        if (diffMillis <= 0L) return 0
-        return ((diffMillis + 999L) / 1_000L).toInt()
-    }
-
     companion object {
         fun factory(
+            appContext: Context,
             appSettingsRepository: AppSettingsRepository,
             premiumStateRepository: PremiumStateRepository,
             trainingSessionRepository: TrainingSessionRepository,
@@ -420,6 +393,7 @@ class TrainingViewModel(
             @Suppress("UNCHECKED_CAST")
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
                 return TrainingViewModel(
+                    appContext = appContext,
                     appSettingsRepository = appSettingsRepository,
                     premiumStateRepository = premiumStateRepository,
                     trainingSessionRepository = trainingSessionRepository,

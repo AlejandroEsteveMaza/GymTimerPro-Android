@@ -1,9 +1,12 @@
 <resources>
+    <string name="notification_channel_rest_live_name">Rest timer</string>
+    <string name="notification_channel_rest_live_description">Live rest countdown notification.</string>
+    <string name="notification_channel_rest_end_name">Rest finished alert</string>
+    <string name="notification_channel_rest_end_description">Alert played when a rest period ends.</string>
+    <string name="notification_rest_live_title">Rest</string>
     <string name="notification_rest_finished_title">Rest finished</string>
     <string name="notification_rest_finished_body_format">Set %1$d/%2$d</string>
-    <string name="live_activity_mode_resting">Rest</string>
     <string name="live_activity_mode_training">Training</string>
     <string name="live_activity_set_progress_expanded_format">Set %1$d of %2$d</string>
     <string name="live_activity_set_progress_compact_format">%1$d/%2$d</string>
-    <string name="app_name_fallback">GymTimerPro</string>
 </resources>

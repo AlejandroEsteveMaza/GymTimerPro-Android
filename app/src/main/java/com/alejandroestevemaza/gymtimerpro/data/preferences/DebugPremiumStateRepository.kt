@@ -21,7 +21,7 @@ import kotlinx.coroutines.flow.flowOf
  */
 class DebugPremiumStateRepository : PremiumStateRepository {
 
-    private val _isPro = MutableStateFlow(true)
+    private val _isPro = MutableStateFlow(false)
 
     override val isPro: Flow<Boolean> = _isPro
 

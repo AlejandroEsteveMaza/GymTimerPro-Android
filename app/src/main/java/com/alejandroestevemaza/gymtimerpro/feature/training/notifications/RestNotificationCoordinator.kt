@@ -11,12 +11,15 @@ import android.content.pm.PackageManager
 import android.media.AudioAttributes
 import android.media.RingtoneManager
 import android.os.Build
+import android.os.SystemClock
+import android.widget.RemoteViews
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import com.alejandroestevemaza.gymtimerpro.MainActivity
 import com.alejandroestevemaza.gymtimerpro.R
 import com.alejandroestevemaza.gymtimerpro.core.model.TrainingSessionState
+import com.alejandroestevemaza.gymtimerpro.core.util.AppForegroundState
 
 interface RestNotificationCoordinator {
     fun syncRestState(session: TrainingSessionState)
@@ -59,6 +62,10 @@ class AndroidRestNotificationCoordinator(
         ensureChannels()
         cancelPendingRestEndAlarm()
         cancelLiveNotification()
+        cancelRestEndNotification()
+        if (AppForegroundState.isForeground()) {
+            return
+        }
         postRestFinishedNotification(
             currentSet = currentSet,
             totalSets = totalSets,
@@ -88,31 +95,43 @@ class AndroidRestNotificationCoordinator(
     ) {
         if (!canPostNotifications()) return
 
+        val safeTotalSets = totalSets.coerceAtLeast(1)
+        val safeCurrentSet = currentSet.coerceIn(0, safeTotalSets)
+        val remainingMillis = (endEpochMillis - System.currentTimeMillis()).coerceAtLeast(0L)
+        val baseElapsed = SystemClock.elapsedRealtime() + remainingMillis
+        val contentView = buildLiveRestContentView(
+            baseElapsed = baseElapsed,
+            currentSet = safeCurrentSet,
+            totalSets = safeTotalSets,
+        )
+        val bigContentView = buildLiveRestContentView(
+            baseElapsed = baseElapsed,
+            currentSet = safeCurrentSet,
+            totalSets = safeTotalSets,
+        )
+
         val notification = NotificationCompat.Builder(appContext, CHANNEL_REST_LIVE)
             .setSmallIcon(android.R.drawable.ic_lock_idle_alarm)
-            .setContentTitle(appContext.getString(R.string.live_activity_mode_resting))
-            .setContentText(
-                appContext.getString(
-                    R.string.live_activity_set_progress_expanded_format,
-                    currentSet,
-                    totalSets,
-                )
-            )
-            .setSubText(resolveAppName())
+            .setCustomContentView(contentView)
+            .setCustomBigContentView(bigContentView)
             .setOngoing(true)
             .setOnlyAlertOnce(true)
             .setSilent(true)
             .setCategory(NotificationCompat.CATEGORY_PROGRESS)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setPriority(NotificationCompat.PRIORITY_LOW)
+            .setColor(ContextCompat.getColor(appContext, R.color.gymtimer_seed_primary))
+            .setColorized(true)
             .setUsesChronometer(true)
             .setChronometerCountDown(true)
             .setWhen(endEpochMillis)
-            .setProgress(totalSets.coerceAtLeast(1), currentSet.coerceAtLeast(0), false)
+            .setShowWhen(true)
+            .setProgress(safeTotalSets, safeCurrentSet, false)
             .setContentIntent(buildOpenAppPendingIntent())
             .build()
 
-        notificationManager.notify(TAG_REST_LIVE, ID_REST_LIVE, notification)
+        // Use untagged notify so the ID matches what startForeground() uses in RestTimerService.
+        notificationManager.notify(ID_REST_LIVE, notification)
     }
 
     private fun postRestFinishedNotification(
@@ -174,7 +193,7 @@ class AndroidRestNotificationCoordinator(
     }
 
     private fun cancelLiveNotification() {
-        notificationManager.cancel(TAG_REST_LIVE, ID_REST_LIVE)
+        notificationManager.cancel(ID_REST_LIVE)
     }
 
     private fun cancelRestEndNotification() {
@@ -215,35 +234,74 @@ class AndroidRestNotificationCoordinator(
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
         val manager = appContext.getSystemService(NotificationManager::class.java) ?: return
 
-        if (manager.getNotificationChannel(CHANNEL_REST_LIVE) == null) {
-            val liveChannel = NotificationChannel(
-                CHANNEL_REST_LIVE,
-                appContext.getString(R.string.live_activity_mode_resting),
-                NotificationManager.IMPORTANCE_LOW,
-            ).apply {
-                setShowBadge(false)
-                description = appContext.getString(R.string.live_activity_mode_resting)
-            }
-            manager.createNotificationChannel(liveChannel)
+        val existingLiveChannel = manager.getNotificationChannel(CHANNEL_REST_LIVE)
+        if (existingLiveChannel != null && shouldRecreateLiveChannel(existingLiveChannel)) {
+            manager.deleteNotificationChannel(CHANNEL_REST_LIVE)
         }
 
-        if (manager.getNotificationChannel(CHANNEL_REST_END) == null) {
-            val audioAttributes = AudioAttributes.Builder()
-                .setUsage(AudioAttributes.USAGE_NOTIFICATION)
-                .build()
-            val endChannel = NotificationChannel(
-                CHANNEL_REST_END,
-                appContext.getString(R.string.notification_rest_finished_title),
-                NotificationManager.IMPORTANCE_HIGH,
-            ).apply {
-                enableVibration(false)
-                setSound(
-                    RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION),
-                    audioAttributes,
-                )
-                description = appContext.getString(R.string.notification_rest_finished_title)
-            }
-            manager.createNotificationChannel(endChannel)
+        val liveChannel = NotificationChannel(
+            CHANNEL_REST_LIVE,
+            appContext.getString(R.string.notification_channel_rest_live_name),
+            NotificationManager.IMPORTANCE_LOW,
+        ).apply {
+            setShowBadge(false)
+            description = appContext.getString(R.string.notification_channel_rest_live_description)
+        }
+        manager.createNotificationChannel(liveChannel)
+
+        val existingEndChannel = manager.getNotificationChannel(CHANNEL_REST_END)
+        if (existingEndChannel != null && shouldRecreateEndChannel(existingEndChannel)) {
+            manager.deleteNotificationChannel(CHANNEL_REST_END)
+        }
+
+        val audioAttributes = AudioAttributes.Builder()
+            .setUsage(AudioAttributes.USAGE_NOTIFICATION)
+            .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+            .build()
+        val endChannel = NotificationChannel(
+            CHANNEL_REST_END,
+            appContext.getString(R.string.notification_channel_rest_end_name),
+            NotificationManager.IMPORTANCE_HIGH,
+        ).apply {
+            enableVibration(false)
+            setSound(
+                RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION),
+                audioAttributes,
+            )
+            description = appContext.getString(R.string.notification_channel_rest_end_description)
+        }
+        manager.createNotificationChannel(endChannel)
+    }
+
+    private fun shouldRecreateLiveChannel(channel: NotificationChannel): Boolean {
+        val prefs = appContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        if (prefs.getBoolean(KEY_LIVE_CHANNEL_MIGRATED, false)) return false
+        val legacyLabel = appContext.getString(R.string.notification_rest_finished_title)
+        val looksLegacyChannel =
+            channel.name?.toString() == legacyLabel && channel.description == legacyLabel
+        return if (looksLegacyChannel) {
+            prefs.edit().putBoolean(KEY_LIVE_CHANNEL_MIGRATED, true).apply()
+            true
+        } else {
+            prefs.edit().putBoolean(KEY_LIVE_CHANNEL_MIGRATED, true).apply()
+            false
+        }
+    }
+
+    private fun shouldRecreateEndChannel(channel: NotificationChannel): Boolean {
+        val prefs = appContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        if (prefs.getBoolean(KEY_END_CHANNEL_MIGRATED_V2, false)) return false
+        // Recreate if sound is missing, importance is too low, or audio usage is the legacy
+        // USAGE_ALARM (which routes through the alarm volume stream and is often muted by users).
+        val needsSound = channel.sound == null
+        val needsImportance = channel.importance < NotificationManager.IMPORTANCE_HIGH
+        val hasWrongUsage = channel.audioAttributes?.usage == AudioAttributes.USAGE_ALARM
+        return if (needsSound || needsImportance || hasWrongUsage) {
+            prefs.edit().putBoolean(KEY_END_CHANNEL_MIGRATED_V2, true).apply()
+            true
+        } else {
+            prefs.edit().putBoolean(KEY_END_CHANNEL_MIGRATED_V2, true).apply()
+            false
         }
     }
 
@@ -255,14 +313,24 @@ class AndroidRestNotificationCoordinator(
             ) == PackageManager.PERMISSION_GRANTED
     }
 
-    private fun resolveAppName(): String {
-        val localizedLabel = appContext.applicationInfo
-            .loadLabel(appContext.packageManager)
-            ?.toString()
-            ?.trim()
-            .orEmpty()
-        if (localizedLabel.isNotBlank()) return localizedLabel
-        return appContext.getString(R.string.app_name_fallback)
+    private fun buildLiveRestContentView(
+        baseElapsed: Long,
+        currentSet: Int,
+        totalSets: Int,
+    ): RemoteViews {
+        val setProgressText = appContext.getString(
+            R.string.live_activity_set_progress_expanded_format,
+            currentSet,
+            totalSets,
+        )
+        return RemoteViews(appContext.packageName, R.layout.notification_rest_timer).apply {
+            setTextViewText(R.id.rest_timer_title, appContext.getString(R.string.notification_rest_live_title))
+            setTextViewText(R.id.rest_timer_app_name, appContext.getString(R.string.app_name))
+            setTextViewText(R.id.rest_timer_progress, setProgressText)
+            setChronometer(R.id.rest_timer_chrono, baseElapsed, null, true)
+            setChronometerCountDown(R.id.rest_timer_chrono, true)
+            setProgressBar(R.id.rest_timer_series_progress, totalSets, currentSet, false)
+        }
     }
 
     companion object {
@@ -278,5 +346,10 @@ class AndroidRestNotificationCoordinator(
         private const val ID_REST_END = 1_102
         private const val TAG_REST_LIVE = "restTimer.live"
         private const val TAG_REST_END = "restTimer.end"
+        private const val PREFS_NAME = "rest_notifications"
+        private const val KEY_LIVE_CHANNEL_MIGRATED = "rest_live_channel_migrated"
+        private const val KEY_END_CHANNEL_MIGRATED = "rest_end_channel_migrated"
+        // V2: forces recreation of channels that had USAGE_ALARM (wrong audio stream for notifications).
+        private const val KEY_END_CHANNEL_MIGRATED_V2 = "rest_end_channel_migrated_v2"
     }
 }

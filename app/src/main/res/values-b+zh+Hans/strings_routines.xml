@@ -1,0 +1,4 @@
+<resources>
+    <string name="routines_duplicate">复制</string>
+    <string name="routines_copy_suffix_format">%1$s（副本）</string>
+</resources>

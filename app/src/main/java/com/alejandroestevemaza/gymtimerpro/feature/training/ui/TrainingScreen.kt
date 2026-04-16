@@ -2,14 +2,17 @@ package com.alejandroestevemaza.gymtimerpro.feature.training.ui
 
 import android.Manifest
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
+import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.SizeTransform
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
@@ -50,6 +53,8 @@ import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.NotificationsOff
+import androidx.compose.material.icons.automirrored.rounded.VolumeUp
 import androidx.compose.material.icons.rounded.FitnessCenter
 import androidx.compose.material.icons.rounded.Layers
 import androidx.compose.material.icons.rounded.Pause
@@ -74,12 +79,17 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.core.app.NotificationManagerCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -105,9 +115,7 @@ import com.alejandroestevemaza.gymtimerpro.core.format.formatRoutineSummary
 import com.alejandroestevemaza.gymtimerpro.core.model.Routine
 import com.alejandroestevemaza.gymtimerpro.core.model.RoutineClassification
 import com.alejandroestevemaza.gymtimerpro.data.preferences.AppContainer
-import com.alejandroestevemaza.gymtimerpro.feature.paywall.model.PaywallEntryPoint
 import com.alejandroestevemaza.gymtimerpro.feature.paywall.model.PaywallInfoLevel
-import com.alejandroestevemaza.gymtimerpro.feature.paywall.model.PaywallPresentationContext
 import com.alejandroestevemaza.gymtimerpro.feature.paywall.model.PaywallPresentationRequest
 import com.alejandroestevemaza.gymtimerpro.feature.routines.ui.RoutineCatalogSection
 import com.alejandroestevemaza.gymtimerpro.feature.routines.ui.RoutinesUiState
@@ -118,6 +126,19 @@ fun TrainingRoute(
     onRequestPaywall: (PaywallPresentationRequest) -> Unit,
 ) {
     val context = LocalContext.current
+    val lifecycleOwner = LocalLifecycleOwner.current
+    var notificationsEnabled by remember {
+        mutableStateOf(NotificationManagerCompat.from(context).areNotificationsEnabled())
+    }
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                notificationsEnabled = NotificationManagerCompat.from(context).areNotificationsEnabled()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
     var showRoutinePicker by remember { mutableStateOf(false) }
     var pickerSearchQuery by remember { mutableStateOf("") }
     var pickerExpandedSectionId by remember { mutableStateOf<String?>(null) }
@@ -127,6 +148,9 @@ fun TrainingRoute(
                 .getBoolean(KEY_POST_NOTIFICATIONS_REQUESTED, false)
         )
     }
+    var soundTipDismissed by remember {
+        mutableStateOf(!shouldShowSoundTipToday(context))
+    }
     val permissionRequestLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission(),
     ) { _ ->
@@ -134,6 +158,7 @@ fun TrainingRoute(
     }
     val trainingViewModel: TrainingViewModel = viewModel(
         factory = TrainingViewModel.factory(
+            appContext = context.applicationContext,
             appSettingsRepository = appContainer.appSettingsRepository,
             premiumStateRepository = appContainer.premiumStateRepository,
             trainingSessionRepository = appContainer.trainingSessionRepository,
@@ -173,6 +198,9 @@ fun TrainingRoute(
         uiState = uiState,
         routines = routines,
         classifications = classifications,
+        notificationsEnabled = notificationsEnabled,
+        soundTipDismissed = soundTipDismissed,
+        onDismissSoundTip = { soundTipDismissed = true },
         showRoutinePicker = showRoutinePicker,
         pickerSearchQuery = pickerSearchQuery,
         pickerExpandedSectionId = pickerExpandedSectionId,
@@ -212,12 +240,19 @@ fun TrainingRoute(
 
 private const val PERMISSION_PREFS_NAME = "gymtimerpro.permissions"
 private const val KEY_POST_NOTIFICATIONS_REQUESTED = "post_notifications.requested"
+private const val KEY_SOUND_TIP_LAST_DATE = "sound_tip.last_date"
+private const val KEY_SOUND_TIP_DISTINCT_DAYS = "sound_tip.distinct_days"
+private const val SOUND_TIP_MAX_DAYS = 4
+
 
 @Composable
 fun TrainingScreen(
     uiState: TrainingUiState,
     routines: List<Routine>,
     classifications: List<RoutineClassification>,
+    notificationsEnabled: Boolean = true,
+    soundTipDismissed: Boolean = false,
+    onDismissSoundTip: () -> Unit = {},
     showRoutinePicker: Boolean,
     pickerSearchQuery: String,
     pickerExpandedSectionId: String?,
@@ -246,10 +281,7 @@ fun TrainingScreen(
         if (uiState.showDailyLimitDialog) {
             onRequestPaywall(
                 PaywallPresentationRequest(
-                    context = PaywallPresentationContext(
-                        entryPoint = PaywallEntryPoint.DailyLimitDuringWorkout,
-                        infoLevel = PaywallInfoLevel.Light,
-                    ),
+                    infoLevel = PaywallInfoLevel.Standard,
                     dailyLimit = com.alejandroestevemaza.gymtimerpro.core.model.TrainingDefaults.dailyFreeUsageLimit,
                     consumedToday = uiState.dailyUsage.consumedCount,
                 )
@@ -302,6 +334,16 @@ fun TrainingScreen(
             ),
             verticalArrangement = Arrangement.spacedBy(GymTheme.spacing.s20),
         ) {
+            if (!notificationsEnabled) {
+                item {
+                    NotificationsDisabledBanner()
+                }
+            }
+            if (!soundTipDismissed) {
+                item {
+                    SoundReminderBanner(onDismiss = onDismissSoundTip)
+                }
+            }
             item {
                 TrainingConfigurationCard(
                     uiState = uiState,
@@ -309,14 +351,14 @@ fun TrainingScreen(
                     onTotalSetsChanged = onTotalSetsChanged,
                     onRestSecondsChanged = onRestSecondsChanged,
                     onUpgradeToPro = {
+                        val consumed = uiState.dailyUsage.consumedCount
+                        val limit = com.alejandroestevemaza.gymtimerpro.core.model.TrainingDefaults.dailyFreeUsageLimit
+                        val infoLevel = if (consumed >= limit) PaywallInfoLevel.Standard else PaywallInfoLevel.Light
                         onRequestPaywall(
                             PaywallPresentationRequest(
-                                context = PaywallPresentationContext(
-                                    entryPoint = PaywallEntryPoint.ProModule,
-                                    infoLevel = PaywallInfoLevel.Standard,
-                                ),
-                                dailyLimit = com.alejandroestevemaza.gymtimerpro.core.model.TrainingDefaults.dailyFreeUsageLimit,
-                                consumedToday = uiState.dailyUsage.consumedCount,
+                                infoLevel = infoLevel,
+                                dailyLimit = limit,
+                                consumedToday = consumed,
                             )
                         )
                     },
@@ -374,7 +416,7 @@ private fun TrainingConfigurationCard(
 
             NumericConfigRow(
                 icon = Icons.Rounded.Layers,
-                title = stringResource(R.string.training_sets_label),
+                title = stringResource(R.string.routines_sets_label),
                 valueText = uiState.session.totalSets.toString(),
                 value = uiState.session.totalSets,
                 valueRange = 1..uiState.settings.maxSetsPreference.maxSets,
@@ -386,7 +428,7 @@ private fun TrainingConfigurationCard(
 
             NumericConfigRow(
                 icon = Icons.Rounded.Timer,
-                title = stringResource(R.string.training_rest_label),
+                title = stringResource(R.string.routines_rest_label),
                 valueText = formatDuration(
                     totalSeconds = uiState.session.restSeconds,
                     displayFormat = uiState.settings.timerDisplayFormat,
@@ -398,28 +440,96 @@ private fun TrainingConfigurationCard(
                 state = if (uiState.canEditConfiguration) GymComponentState.Normal else GymComponentState.Disabled,
             )
             if (!uiState.isPro) {
+                val consumed = uiState.dailyUsage.consumedCount
+                val limit = com.alejandroestevemaza.gymtimerpro.core.model.TrainingDefaults.dailyFreeUsageLimit
+                val rawProgress = (consumed.toFloat() / limit).coerceIn(0f, 1f)
+                val animatedProgress by animateFloatAsState(
+                    targetValue = rawProgress,
+                    animationSpec = tween(durationMillis = 400),
+                    label = "DailyUsageProgress",
+                )
+                val usageColor = when {
+                    rawProgress >= 1f -> GymTheme.colors.error
+                    rawProgress >= 0.75f -> GymTheme.colors.resting
+                    else -> GymTheme.colors.iconTint
+                }
                 HorizontalDivider(color = GymTheme.colors.divider)
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = GymTheme.spacing.s12),
+                    verticalArrangement = Arrangement.spacedBy(GymTheme.spacing.s8),
                 ) {
-                    Text(
-                        text = stringResource(
-                            R.string.pro_usage_today_format,
-                            uiState.dailyUsage.consumedCount,
-                            com.alejandroestevemaza.gymtimerpro.core.model.TrainingDefaults.dailyFreeUsageLimit,
-                        ),
-                        style = GymTheme.type.footnoteRegular,
-                        color = GymTheme.colors.textSecondary,
-                        modifier = Modifier.weight(1f),
-                    )
-                    TextButton(onClick = onUpgradeToPro) {
-                        Text(text = stringResource(R.string.pro_button_upgrade))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            text = stringResource(
+                                R.string.pro_usage_today_format,
+                                consumed,
+                                limit,
+                            ),
+                            style = GymTheme.type.footnoteSemibold,
+                            color = usageColor,
+                        )
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(GymTheme.radii.capsule))
+                                .background(GymTheme.colors.iconTint.copy(alpha = 0.12f))
+                                .clickable(onClick = onUpgradeToPro)
+                                .padding(
+                                    horizontal = GymTheme.spacing.s10,
+                                    vertical = GymTheme.spacing.s4,
+                                ),
+                        ) {
+                            Text(
+                                text = stringResource(R.string.pro_button_upgrade),
+                                style = GymTheme.type.captionSemibold,
+                                color = GymTheme.colors.iconTint,
+                            )
+                        }
+                    }
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(3.dp)
+                            .clip(RoundedCornerShape(GymTheme.radii.capsule))
+                            .background(GymTheme.colors.divider),
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth(animatedProgress)
+                                .fillMaxHeight()
+                                .background(usageColor),
+                        )
                     }
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun ProStatusChip(
+    isPro: Boolean,
+) {
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(GymTheme.spacing.s4),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = if (isPro) stringResource(R.string.pro_status_pro) else stringResource(R.string.pro_status_free),
+            style = GymTheme.type.captionSemibold,
+            color = if (isPro) GymTheme.colors.textPrimary else GymTheme.colors.textSecondary,
+        )
+        Icon(
+            imageVector = Icons.Rounded.Verified,
+            contentDescription = null,
+            tint = if (isPro) GymTheme.colors.completed else GymTheme.colors.textSecondary,
+            modifier = Modifier.size(GymTheme.spacing.s14),
+        )
     }
 }
 
@@ -778,7 +888,7 @@ private fun TrainingProgressLiveContent(
                         verticalArrangement = Arrangement.spacedBy(GymTheme.spacing.s6),
                     ) {
                         Text(
-                            text = stringResource(R.string.training_sets_label).uppercase(),
+                            text = stringResource(R.string.routines_sets_label).uppercase(),
                             style = GymTheme.type.captionRegular,
                             color = GymTheme.colors.textSecondary,
                         )
@@ -813,7 +923,7 @@ private fun TrainingProgressLiveContent(
                     verticalArrangement = Arrangement.spacedBy(GymTheme.spacing.s6),
                 ) {
                     Text(
-                        text = stringResource(R.string.training_sets_label).uppercase(),
+                        text = stringResource(R.string.routines_sets_label).uppercase(),
                         style = GymTheme.type.captionRegular,
                         color = GymTheme.colors.textSecondary,
                     )
@@ -872,7 +982,7 @@ private fun TrainingProgressLiveContent(
                     verticalArrangement = Arrangement.spacedBy(GymTheme.spacing.s6),
                 ) {
                     Text(
-                        text = stringResource(R.string.training_rest_label).uppercase(),
+                        text = stringResource(R.string.routines_rest_label).uppercase(),
                         style = GymTheme.type.captionRegular,
                         color = GymTheme.colors.textSecondary,
                     )
@@ -973,25 +1083,135 @@ private fun WorkoutCompletedBanner() {
 }
 
 @Composable
-private fun ProStatusChip(
-    isPro: Boolean,
-) {
+private fun SoundReminderBanner(onDismiss: () -> Unit) {
     Row(
-        horizontalArrangement = Arrangement.spacedBy(GymTheme.spacing.s4),
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(
+                color = GymTheme.colors.iconTint.copy(alpha = 0.10f),
+                shape = RoundedCornerShape(GymTheme.radii.r12),
+            )
+            .padding(
+                start = GymTheme.spacing.s16,
+                top = GymTheme.spacing.s12,
+                bottom = GymTheme.spacing.s12,
+                end = GymTheme.spacing.s4,
+            ),
         verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(GymTheme.spacing.s12),
     ) {
-        Text(
-            text = if (isPro) stringResource(R.string.pro_status_pro) else stringResource(R.string.pro_status_free),
-            style = GymTheme.type.captionSemibold,
-            color = if (isPro) GymTheme.colors.textPrimary else GymTheme.colors.textSecondary,
-        )
         Icon(
-            imageVector = Icons.Rounded.Verified,
+            imageVector = Icons.AutoMirrored.Rounded.VolumeUp,
             contentDescription = null,
-            tint = if (isPro) GymTheme.colors.completed else GymTheme.colors.textSecondary,
-            modifier = Modifier.size(GymTheme.spacing.s14),
+            tint = GymTheme.colors.iconTint,
+            modifier = Modifier.size(GymTheme.spacing.s20),
         )
+        Column(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(GymTheme.spacing.s2),
+        ) {
+            Text(
+                text = stringResource(R.string.training_sound_tip_title),
+                style = GymTheme.type.subheadlineSemibold,
+                color = GymTheme.colors.iconTint,
+            )
+            Text(
+                text = stringResource(R.string.training_sound_tip_body),
+                style = GymTheme.type.captionRegular,
+                color = GymTheme.colors.textSecondary,
+            )
+        }
+        IconButton(onClick = onDismiss) {
+            Icon(
+                imageVector = Icons.Rounded.Close,
+                contentDescription = null,
+                tint = GymTheme.colors.textSecondary,
+                modifier = Modifier.size(18.dp),
+            )
+        }
     }
 }
 
+@Composable
+private fun NotificationsDisabledBanner() {
+    val context = LocalContext.current
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(
+                color = GymTheme.colors.error.copy(alpha = 0.10f),
+                shape = RoundedCornerShape(GymTheme.radii.r12),
+            )
+            .padding(
+                horizontal = GymTheme.spacing.s16,
+                vertical = GymTheme.spacing.s12,
+            ),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(GymTheme.spacing.s12),
+    ) {
+        Icon(
+            imageVector = Icons.Rounded.NotificationsOff,
+            contentDescription = null,
+            tint = GymTheme.colors.error,
+            modifier = Modifier.size(GymTheme.spacing.s20),
+        )
+        Column(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(GymTheme.spacing.s2),
+        ) {
+            Text(
+                text = stringResource(R.string.training_notifications_disabled),
+                style = GymTheme.type.subheadlineSemibold,
+                color = GymTheme.colors.error,
+            )
+            Text(
+                text = stringResource(R.string.training_notifications_disabled_body),
+                style = GymTheme.type.captionRegular,
+                color = GymTheme.colors.textSecondary,
+            )
+        }
+        TextButton(
+            onClick = {
+                context.startActivity(
+                    Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
+                        putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
+                    }
+                )
+            },
+        ) {
+            Text(
+                text = stringResource(R.string.training_notifications_enable),
+                style = GymTheme.type.subheadlineSemibold,
+                color = GymTheme.colors.error,
+            )
+        }
+    }
+}
 
+private fun shouldShowSoundTipToday(context: Context): Boolean {
+    val prefs = context.getSharedPreferences(PERMISSION_PREFS_NAME, Context.MODE_PRIVATE)
+    val today = java.time.LocalDate.now()
+    val todayStr = today.toString()
+    val lastDateStr = prefs.getString(KEY_SOUND_TIP_LAST_DATE, null)
+
+    if (lastDateStr == todayStr) return false
+
+    val distinctDays = prefs.getInt(KEY_SOUND_TIP_DISTINCT_DAYS, 0)
+
+    if (distinctDays < SOUND_TIP_MAX_DAYS) {
+        // Phase 1: once per distinct day for the first 4 days
+        prefs.edit()
+            .putString(KEY_SOUND_TIP_LAST_DATE, todayStr)
+            .putInt(KEY_SOUND_TIP_DISTINCT_DAYS, distinctDays + 1)
+            .apply()
+        return true
+    }
+
+    // Phase 2: once per week indefinitely
+    val lastDate = lastDateStr?.let { runCatching { java.time.LocalDate.parse(it) }.getOrNull() }
+    if (lastDate == null || java.time.temporal.ChronoUnit.DAYS.between(lastDate, today) >= 7) {
+        prefs.edit().putString(KEY_SOUND_TIP_LAST_DATE, todayStr).apply()
+        return true
+    }
+    return false
+}

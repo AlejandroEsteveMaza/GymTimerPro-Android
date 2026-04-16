@@ -11,6 +11,7 @@ import com.alejandroestevemaza.gymtimerpro.data.repository.RoutinesRepository
 import com.alejandroestevemaza.gymtimerpro.data.repository.TrainingSessionCoordinator
 import com.alejandroestevemaza.gymtimerpro.data.repository.WorkoutCompletionRepository
 import com.alejandroestevemaza.gymtimerpro.feature.training.notifications.AndroidRestNotificationCoordinator
+import com.alejandroestevemaza.gymtimerpro.feature.training.notifications.RestFinishedSoundPlayer
 import com.alejandroestevemaza.gymtimerpro.feature.training.notifications.RestNotificationCoordinator
 
 class AppContainer(context: Context) {
@@ -42,6 +43,10 @@ class AppContainer(context: Context) {
 
     val restNotificationCoordinator: RestNotificationCoordinator by lazy {
         AndroidRestNotificationCoordinator(appContext)
+    }
+
+    val restFinishedSoundPlayer: RestFinishedSoundPlayer by lazy {
+        RestFinishedSoundPlayer(appContext)
     }
 
     val routinesRepository: RoutinesRepository by lazy {
