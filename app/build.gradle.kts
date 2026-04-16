@@ -38,18 +38,6 @@ android {
             }
         }
     }
-
-    bundle {
-        language { enableSplit = true }
-        density { enableSplit = true }
-        abi { enableSplit = true }
-    }
-
-    packaging {
-        jniLibs {
-            useLegacyPackaging = false
-        }
-    }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
